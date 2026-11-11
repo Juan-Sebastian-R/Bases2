@@ -645,14 +645,21 @@ class Neo4jDB:
             record = result.single()
             if not record:
                 return []
-            return [
-                {
-                    "id": dict(node).get("id"),
-                    "label": dict(node).get("nombre", ""),
-                    "type": list(node.labels)[0] if node.labels else "Unknown",
-                }
-                for node in record["nodos"]
-            ]
+            
+            nodes_list = []
+            for node in record["nodos"]:
+                nd = dict(node)
+                lbl = list(node.labels)[0] if node.labels else "Nodo"
+                # Name can be 'nombre' (Usuario, Empresa, Habilidad, Proyecto) or 'titulo' (Oferta)
+                name = nd.get("nombre") or nd.get("titulo") or nd.get("id", "Desconocido")
+                nodes_list.append({
+                    "id": nd.get("id"),
+                    "nombre": name,
+                    "label": name,
+                    "type": lbl,
+                    "tipo": lbl,
+                })
+            return nodes_list
 
     def recommend_contacts(self, user_id):
         with self.driver.session() as session:

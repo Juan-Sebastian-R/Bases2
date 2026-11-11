@@ -585,16 +585,31 @@
         const companyId = document.getElementById('pathCompany').value;
         if (!companyId) return;
         const div = document.getElementById('shortestPathResult');
-        div.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
+        div.innerHTML = '<div class="spinner-border spinner-border-sm text-info"></div>';
         try {
             const data = await apiFetch(`/api/recomendaciones/ruta/${USER_ID}/${companyId}`);
             if (!data.length) { div.innerHTML = '<p class="text-muted">No se encontró ruta.</p>'; return; }
-            div.innerHTML = '<div class="d-flex flex-wrap align-items-center">' +
+
+            const typeBadges = {
+                'Usuario': 'bg-success',
+                'Empresa': 'bg-primary',
+                'Habilidad': 'bg-warning text-dark',
+                'Proyecto': 'badge-proyecto',
+                'Oferta': 'bg-danger'
+            };
+
+            div.innerHTML = '<div class="d-flex flex-wrap align-items-center gap-1 mt-2">' +
                 data.map((n, i) => {
-                    const arrow = i < data.length - 1 ? '<i class="fas fa-arrow-right mx-2 text-muted"></i>' : '';
-                    return `<span class="badge bg-secondary fs-6">${n.nombre || n.label || n}</span>${arrow}`;
+                    const arrow = i < data.length - 1 ? '<i class="fas fa-arrow-right mx-2 text-info"></i>' : '';
+                    const nodeName = n.nombre || n.label || (typeof n === 'object' ? (n.id || 'Nodo') : n);
+                    const nodeType = n.type || n.tipo || 'Nodo';
+                    const badgeClass = typeBadges[nodeType] || 'bg-secondary';
+                    const customStyle = nodeType === 'Proyecto' ? 'background-color: #9C27B0 !important;' : '';
+                    return `<span class="badge ${badgeClass} fs-6 px-2 py-1 shadow-sm" style="${customStyle}">
+                        <small class="opacity-75 me-1" style="font-size:0.75rem;">[${nodeType}]</small>${nodeName}
+                    </span>${arrow}`;
                 }).join('') + '</div>';
-        } catch(e) { div.innerHTML = '<p class="text-danger">Error al cargar.</p>'; }
+        } catch(e) { div.innerHTML = '<p class="text-danger">Error al cargar la ruta.</p>'; }
     }
 
     // ---------- Ego Graph ----------
