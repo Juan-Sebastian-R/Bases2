@@ -65,10 +65,16 @@ def admin_required(f):
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
+    # If already logged in, redirect accordingly
+    if "user_id" in session:
+        if session.get("role") == "admin":
+            return redirect(url_for("dashboard_page"))
+        return redirect(url_for("mi_perfil"))
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
-        next_url = request.form.get("next") or "/"
+        next_url = request.form.get("next") or ""
 
         # Admin check
         if email == "admin@pronet.com" and (password == "admin123" or password == "admin"):
@@ -76,7 +82,7 @@ def login_page():
             session["role"] = "admin"
             session["user_name"] = "Administrador"
             flash("Bienvenido, Administrador. Acceso total concedido.", "success")
-            return redirect(next_url)
+            return redirect(next_url if next_url and next_url != "/" else url_for("dashboard_page"))
 
         # Normal User check in Neo4j
         usuario = db.get_usuario_by_email(email)
@@ -85,7 +91,7 @@ def login_page():
             session["role"] = "usuario"
             session["user_name"] = usuario.get("nombre", "Usuario")
             flash(f"¡Bienvenido de nuevo, {usuario.get('nombre')}!", "success")
-            return redirect(f"/usuarios/{usuario['id']}")
+            return redirect(next_url if next_url and next_url != "/" else f"/usuarios/{usuario['id']}")
         else:
             flash("Usuario no encontrado con ese correo electrónico.", "danger")
 
@@ -134,7 +140,7 @@ def register_page():
 @login_required
 def mi_perfil():
     if session.get("role") == "admin":
-        return redirect("/usuarios")
+        return redirect(url_for("dashboard_page"))
     return redirect(f"/usuarios/{session['user_id']}")
 
 
@@ -143,6 +149,16 @@ def mi_perfil():
 
 @app.route("/")
 def index():
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    if session.get("role") == "admin":
+        return redirect(url_for("dashboard_page"))
+    return redirect(url_for("mi_perfil"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard_page():
     stats = {
         "usuarios": len(db.get_all_usuarios()),
         "empresas": len(db.get_all_empresas()),
