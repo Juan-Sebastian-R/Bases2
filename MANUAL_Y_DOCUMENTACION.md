@@ -10,7 +10,7 @@
 | **CRUD de Usuarios con información personal y profesional** | ✅ Cumple | Rutas `/usuarios`, API REST `/api/usuarios`, modal de creación y edición, eliminación con borrado en cascada en grafo (`DETACH DELETE`). |
 | **Relación entre usuarios (CONECTA_CON)** | ✅ Cumple | En `/usuarios/<id>`, módulo interactivo de "Conexiones Profesionales" que permite enlazar y desenlazar usuarios. |
 | **Vincular usuarios con habilidades (TIENE_HABILIDAD)** | ✅ Cumple | En `/usuarios/<id>`, sección para asignar y retirar competencias técnicas del catálogo. |
-| **Vincular usuarios con empresas (TRABAJA_EN)** | ✅ Cumple | En `/usuarios/<id>`, registro de experiencia laboral con cargo y fecha de ingreso vinculada a una empresa del grafo. |
+| **Vincular usuarios con empresas (TRABAJA_EN)** | ✅ Cumple | En `/usuarios/<id>`, registro de experiencia laboral con cargo, fecha de inicio, fecha de fin y estado actual vinculado a una empresa del grafo. |
 | **Vincular usuarios con proyectos (PARTICIPA_EN)** | ✅ Cumple | En `/proyectos` y `/usuarios/<id>`, asignación de roles y participación activa en proyectos. |
 | **Registrar empresas y ofertas publicadas (PUBLICA)** | ✅ Cumple | En `/empresas` y `/ofertas`, creación de empresas y publicación de vacantes asociadas mediante la relación `PUBLICA`. |
 | **Relacionar ofertas con habilidades requeridas (REQUIERE)** | ✅ Cumple | En `/ofertas`, botón "Habilidades" que despliega y gestiona los requisitos técnicos de cada vacante. |
@@ -94,7 +94,7 @@ Las redes profesionales modernas (como LinkedIn o redes de networking académico
 Esta es una de las vistas más potentes de la aplicación:
 1. **Pestaña Conexiones Profesionales:** Permite conectar al usuario actual con otro usuario del sistema (`CONECTA_CON`) mediante un menú desplegable y el botón **"Conectar"**. También permite romper conexiones existentes.
 2. **Pestaña Habilidades:** Asigna competencias técnicas al usuario (`TIENE_HABILIDAD`) tomadas del catálogo general.
-3. **Pestaña Experiencia Laboral:** Vincula al usuario con una empresa (`TRABAJA_EN`) especificando el cargo (ej. *Tech Lead*) y fecha de ingreso.
+3. **Pestaña Experiencia Laboral:** Vincula al usuario con una empresa (`TRABAJA_EN`) especificando el cargo (ej. *Tech Lead*), fecha de inicio y fecha de fin (o marcando si trabaja allí actualmente).
 4. **Pestaña Proyectos:** Agrega al usuario a proyectos colaborativos con su rol asignado (`PARTICIPA_EN`).
 5. **Pestaña Postulaciones:** Muestra las vacantes a las que el usuario ha aplicado y permite postularlo a nuevas ofertas (`POSTULA_A`).
 6. **Pestaña Recomendaciones (Inteligencia de Grafos):**

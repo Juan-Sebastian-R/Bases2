@@ -138,30 +138,38 @@ def main():
     print("\n🔗 Creando relaciones laborales (TRABAJA_EN)...")
     work_relations = [
         # TechColombia (0): Carlos(0), Juan(2), Santiago(8)
-        (0, 0, "Ingeniero de Software Senior", "2020-03-15"),
-        (2, 0, "DevOps Engineer", "2021-07-01"),
-        (8, 0, "Cloud Architect", "2022-01-10"),
+        (0, 0, "Ingeniero de Software Senior", "2020-03-15", None, True),
+        (0, 4, "Desarrollador Junior", "2018-01-10", "2020-02-28", False),
+        (2, 0, "DevOps Engineer", "2021-07-01", None, True),
+        (8, 0, "Cloud Architect", "2022-01-10", None, True),
         # DataSoft (1): María(1), Mateo(12), Isabella(11)
-        (1, 1, "Data Scientist Lead", "2021-05-20"),
-        (12, 1, "ML Engineer", "2022-08-15"),
-        (11, 1, "Data Engineer", "2023-02-01"),
+        (1, 1, "Data Scientist Lead", "2021-05-20", None, True),
+        (12, 1, "ML Engineer", "2022-08-15", None, True),
+        (11, 1, "Data Engineer", "2023-02-01", None, True),
         # ConsulTIC (2): Sofía(5), Gabriela(13)
-        (5, 2, "Project Manager", "2020-11-01"),
-        (13, 2, "Scrum Master", "2021-09-15"),
+        (5, 2, "Project Manager", "2020-11-01", None, True),
+        (13, 2, "Scrum Master", "2021-09-15", None, True),
         # BancoDigital (3): Diego(6), Valentina(7)
-        (6, 3, "Mobile Developer Lead", "2022-04-01"),
-        (7, 3, "UX/UI Designer Senior", "2021-12-01"),
+        (6, 3, "Mobile Developer Lead", "2022-04-01", None, True),
+        (7, 3, "UX/UI Designer Senior", "2021-12-01", None, True),
         # CloudNova (4): Andrés(4), Nicolás(10)
-        (4, 4, "Backend Developer Senior", "2022-06-15"),
-        (10, 4, "Full Stack Developer", "2023-01-10"),
+        (4, 4, "Backend Developer Senior", "2022-06-15", None, True),
+        (4, 0, "Desarrollador Python", "2019-05-01", "2022-05-30", False),
+        (10, 4, "Full Stack Developer", "2023-01-10", None, True),
         # InnovaApps (5): Laura(3), Daniel(14), Camila(9)
-        (3, 5, "Frontend Developer Lead", "2021-08-01"),
-        (14, 5, "QA Engineer", "2022-10-01"),
-        (9, 5, "Cybersecurity Analyst", "2023-03-15"),
+        (3, 5, "Frontend Developer Lead", "2021-08-01", None, True),
+        (14, 5, "QA Engineer", "2022-10-01", None, True),
+        (9, 5, "Cybersecurity Analyst", "2023-03-15", None, True),
     ]
-    for u_idx, e_idx, cargo, fecha in work_relations:
-        db.set_works_at(uid(u_idx), eid(e_idx), cargo, fecha)
-        print(f"  ✓ {usuarios[u_idx]['nombre']} → {empresas[e_idx]['nombre']} ({cargo})")
+    for item in work_relations:
+        if len(item) == 4:
+            u_idx, e_idx, cargo, fecha_inicio = item
+            fecha_fin, actual = None, True
+        else:
+            u_idx, e_idx, cargo, fecha_inicio, fecha_fin, actual = item
+        db.set_works_at(uid(u_idx), eid(e_idx), cargo, fecha_inicio, fecha_fin, actual)
+        estado_str = "Actualmente" if actual else f"hasta {fecha_fin}"
+        print(f"  ✓ {usuarios[u_idx]['nombre']} → {empresas[e_idx]['nombre']} ({cargo}) [{fecha_inicio} - {estado_str}]")
 
     # --- CONECTA_CON (connections between users) ---
     print("\n🤝 Creando conexiones entre usuarios (CONECTA_CON)...")

@@ -451,7 +451,14 @@ def api_rel_conectar():
 def api_rel_trabaja_en():
     data = request.get_json()
     if request.method == "POST":
-        db.set_works_at(data["user_id"], data["company_id"], data.get("cargo", ""), data.get("fecha_inicio", ""))
+        db.set_works_at(
+            data["user_id"],
+            data["company_id"],
+            data.get("cargo", ""),
+            data.get("fecha_inicio", ""),
+            data.get("fecha_fin"),
+            data.get("actual", False),
+        )
         return jsonify({"message": "Relación laboral creada"})
     else:
         db.remove_works_at(data["user_id"], data["company_id"])
@@ -608,10 +615,12 @@ def api_user_empresas(id):
         data = request.get_json() or {}
         company_id = data.get("empresa_id") or data.get("company_id")
         cargo = data.get("cargo", "")
-        fecha = data.get("fecha_inicio", "")
+        fecha_inicio = data.get("fecha_inicio", "")
+        fecha_fin = data.get("fecha_fin")
+        actual = data.get("actual", False)
         if not company_id:
             return jsonify({"error": "Falta empresa_id"}), 400
-        db.set_works_at(id, company_id, cargo, fecha)
+        db.set_works_at(id, company_id, cargo, fecha_inicio, fecha_fin, actual)
         return jsonify({"message": "Experiencia agregada"})
     return jsonify(db.get_user_companies(id))
 

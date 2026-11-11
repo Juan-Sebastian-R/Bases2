@@ -377,15 +377,23 @@ class Neo4jDB:
                 id1=user1_id, id2=user2_id,
             )
 
-    def set_works_at(self, user_id, company_id, cargo, fecha_inicio):
+    def set_works_at(self, user_id, company_id, cargo, fecha_inicio, fecha_fin=None, actual=False):
         with self.driver.session() as session:
             session.run(
                 """
                 MATCH (u:Usuario {id: $uid}), (e:Empresa {id: $cid})
                 MERGE (u)-[r:TRABAJA_EN]->(e)
-                SET r.cargo = $cargo, r.fecha_inicio = $fecha_inicio
+                SET r.cargo = $cargo,
+                    r.fecha_inicio = $fecha_inicio,
+                    r.fecha_fin = $fecha_fin,
+                    r.actual = $actual
                 """,
-                uid=user_id, cid=company_id, cargo=cargo, fecha_inicio=fecha_inicio,
+                uid=user_id,
+                cid=company_id,
+                cargo=cargo,
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                actual=bool(actual),
             )
 
     def remove_works_at(self, user_id, company_id):
@@ -519,7 +527,7 @@ class Neo4jDB:
             result = session.run(
                 """
                 MATCH (u:Usuario {id: $uid})-[r:TRABAJA_EN]->(e:Empresa)
-                RETURN e, r.cargo AS cargo, r.fecha_inicio AS fecha_inicio
+                RETURN e, r.cargo AS cargo, r.fecha_inicio AS fecha_inicio, r.fecha_fin AS fecha_fin, r.actual AS actual
                 """,
                 uid=user_id,
             )
@@ -532,6 +540,8 @@ class Neo4jDB:
                     "id": dict(r["e"]).get("id"),
                     "cargo": r["cargo"],
                     "fecha_inicio": r["fecha_inicio"],
+                    "fecha_fin": r["fecha_fin"],
+                    "actual": r["actual"] if r["actual"] is not None else (not bool(r["fecha_fin"])),
                 }
                 for r in result
             ]

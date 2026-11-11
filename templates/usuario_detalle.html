@@ -115,20 +115,43 @@
                     </div>
                     {% if can_edit %}
                     <div class="collapse px-3 pt-3" id="addExpForm">
-                        <div class="row g-2 mb-3">
-                            <div class="col-md-4">
-                                <select class="form-select form-select-sm" id="expEmpresa">
-                                    <option value="">Empresa...</option>
-                                </select>
+                        <div class="p-3 mb-3 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
+                            <h6 class="text-info mb-3"><i class="fas fa-plus-circle me-1"></i>Añadir Experiencia Laboral</h6>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Empresa *</label>
+                                    <select class="form-select form-select-sm" id="expEmpresa">
+                                        <option value="">Seleccionar empresa...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Cargo / Puesto *</label>
+                                    <input type="text" class="form-control form-control-sm" id="expCargo" placeholder="Ej: Ingeniero de Software">
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <input type="text" class="form-control form-control-sm" id="expCargo" placeholder="Cargo">
+                            <div class="row g-2 mb-3 align-items-center">
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Fecha de Inicio *</label>
+                                    <input type="date" class="form-control form-control-sm" id="expFechaInicio">
+                                </div>
+                                <div class="col-md-4" id="colFechaFin">
+                                    <label class="form-label small text-muted mb-1">Fecha de Fin</label>
+                                    <input type="date" class="form-control form-control-sm" id="expFechaFin" disabled>
+                                </div>
+                                <div class="col-md-4 pt-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="expActual" checked onchange="toggleFechaFin()">
+                                        <label class="form-check-label small text-light" for="expActual">
+                                            <i class="fas fa-briefcase text-success me-1"></i>Trabajo actualmente aquí
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <input type="date" class="form-control form-control-sm" id="expFecha">
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-sm btn-primary w-100" onclick="addExperience()">Agregar</button>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" data-bs-toggle="collapse" data-bs-target="#addExpForm">Cancelar</button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addExperience()">
+                                    <i class="fas fa-save me-1"></i>Guardar Experiencia
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -401,6 +424,15 @@
     }
 
     // ---------- Experiencia ----------
+    function toggleFechaFin() {
+        const isActual = document.getElementById('expActual').checked;
+        const finInput = document.getElementById('expFechaFin');
+        finInput.disabled = isActual;
+        if (isActual) {
+            finInput.value = '';
+        }
+    }
+
     async function loadExperience() {
         try {
             const data = await apiFetch(`/api/usuarios/${USER_ID}/empresas`);
@@ -410,14 +442,25 @@
             list.innerHTML = data.map(e => {
                 const empName = (typeof e.empresa === 'object' && e.empresa !== null) ? (e.empresa.nombre || '') : (e.empresa || e.nombre || 'Empresa');
                 const empId = (typeof e.empresa === 'object' && e.empresa !== null) ? e.empresa.id : (e.empresa_id || e.id);
+                const isActual = e.actual === true || (!e.fecha_fin && !!e.fecha_inicio);
+                
+                let dateBadge = '';
+                if (e.fecha_inicio && isActual) {
+                    dateBadge = `<small class="text-light ms-2"><i class="fas fa-calendar-alt text-info me-1"></i>${e.fecha_inicio} &ndash; <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Actualmente</span></small>`;
+                } else if (e.fecha_inicio && e.fecha_fin) {
+                    dateBadge = `<small class="text-muted ms-2"><i class="fas fa-calendar-alt me-1"></i>${e.fecha_inicio} &ndash; ${e.fecha_fin}</small>`;
+                } else if (e.fecha_inicio) {
+                    dateBadge = `<small class="text-muted ms-2"><i class="fas fa-calendar-alt me-1"></i>Desde ${e.fecha_inicio}</small>`;
+                }
+
                 return `
                 <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                     <div>
                         <strong class="text-white">${empName}</strong>
                         ${e.cargo ? `<span class="badge bg-secondary ms-2">${e.cargo}</span>` : ''}
-                        ${e.fecha_inicio ? `<small class="text-muted ms-2"><i class="fas fa-calendar-alt me-1"></i>${e.fecha_inicio}</small>` : ''}
+                        ${dateBadge}
                     </div>
-                    ${CAN_EDIT ? `<button class="btn btn-sm btn-outline-danger" onclick="removeExperience('${empId}')"><i class="fas fa-times"></i></button>` : ''}
+                    ${CAN_EDIT ? `<button class="btn btn-sm btn-outline-danger" onclick="removeExperience('${empId}')" title="Eliminar experiencia"><i class="fas fa-times"></i></button>` : ''}
                 </div>
             `;
             }).join('');
@@ -426,16 +469,53 @@
 
     async function addExperience() {
         const empresa = document.getElementById('expEmpresa').value;
-        const cargo = document.getElementById('expCargo').value;
-        const fecha = document.getElementById('expFecha').value;
-        if (!empresa) return;
+        const cargo = document.getElementById('expCargo').value.trim();
+        const fechaInicio = document.getElementById('expFechaInicio').value;
+        const actual = document.getElementById('expActual').checked;
+        const fechaFin = actual ? null : (document.getElementById('expFechaFin').value || null);
+
+        if (!empresa) {
+            showToast('Por favor selecciona una empresa', 'warning');
+            return;
+        }
+        if (!fechaInicio) {
+            showToast('Por favor ingresa la fecha de inicio', 'warning');
+            return;
+        }
+        if (!actual && !fechaFin) {
+            showToast('Por favor ingresa la fecha de fin o marca que trabajas actualmente allí', 'warning');
+            return;
+        }
+
         try {
             const res = await fetch(`/api/usuarios/${USER_ID}/empresas`, {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({empresa_id: empresa, cargo, fecha_inicio: fecha})
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    empresa_id: empresa,
+                    cargo: cargo || 'Colaborador',
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    actual: actual
+                })
             });
             if (!res.ok) throw new Error('Error al agregar experiencia');
-            showToast('Experiencia agregada', 'success');
+            showToast('Experiencia agregada exitosamente', 'success');
+            
+            // Limpiar formulario
+            document.getElementById('expCargo').value = '';
+            document.getElementById('expFechaInicio').value = '';
+            document.getElementById('expFechaFin').value = '';
+            document.getElementById('expActual').checked = true;
+            toggleFechaFin();
+
+            // Cerrar collapse si está abierto
+            const collapseEl = document.getElementById('addExpForm');
+            if (collapseEl && window.bootstrap) {
+                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
+                if (bsCollapse) bsCollapse.hide();
+            }
+
             loadExperience();
         } catch(e) { showToast(e.message, 'danger'); }
     }
