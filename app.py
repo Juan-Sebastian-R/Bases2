@@ -87,24 +87,42 @@ def login_page():
         password = request.form.get("password", "").strip()
         next_url = request.form.get("next") or ""
 
+        # Validate that both fields are filled
+        if not email or not password:
+            flash("Debes ingresar tu correo y tu contraseña. Ningún campo puede quedar vacío.", "warning")
+            usuarios = db.get_all_usuarios()
+            return render_template("login.html", usuarios=usuarios)
+
         # Admin check
-        if email == "admin@pronet.com" and (password == "admin123" or password == "admin"):
-            session["user_id"] = "admin"
-            session["role"] = "admin"
-            session["user_name"] = "Administrador"
-            flash("Bienvenido, Administrador. Acceso total concedido.", "success")
-            return redirect(next_url if next_url and next_url != "/" else url_for("dashboard_page"))
+        if email == "admin@pronet.com":
+            if password == "admin123" or password == "admin":
+                session["user_id"] = "admin"
+                session["role"] = "admin"
+                session["user_name"] = "Administrador"
+                flash("Bienvenido, Administrador. Acceso total concedido.", "success")
+                return redirect(next_url if next_url and next_url != "/" else url_for("dashboard_page"))
+            else:
+                flash("Contraseña incorrecta para la cuenta de Administrador.", "danger")
+                usuarios = db.get_all_usuarios()
+                return render_template("login.html", usuarios=usuarios)
 
         # Normal User check in Neo4j
         usuario = db.get_usuario_by_email(email)
         if usuario:
+            user_pwd = str(usuario.get("password") or "").strip()
+            # Strict password check: MUST match the exact user password in database
+            if not user_pwd or password != user_pwd:
+                flash("Contraseña incorrecta. Por favor verifica tu clave de acceso.", "danger")
+                usuarios = db.get_all_usuarios()
+                return render_template("login.html", usuarios=usuarios)
+
             session["user_id"] = usuario["id"]
             session["role"] = "usuario"
             session["user_name"] = usuario.get("nombre", "Usuario")
             flash(f"¡Bienvenido de nuevo, {usuario.get('nombre')}!", "success")
             return redirect(next_url if next_url and next_url != "/" else f"/usuarios/{usuario['id']}")
         else:
-            flash("Usuario no encontrado con ese correo electrónico.", "danger")
+            flash("No existe ningún usuario registrado con ese correo electrónico.", "danger")
 
     usuarios = db.get_all_usuarios()
     return render_template("login.html", usuarios=usuarios)
