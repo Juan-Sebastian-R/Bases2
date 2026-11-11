@@ -52,7 +52,9 @@ La aplicación cuenta con un sistema de sesiones basado en dos roles claramente 
   - **Privacidad y Control:** No puede editar ni borrar la información de otros profesionales.
   - **Bolsa de Empleo:** Puede postularse directamente a cualquier vacante activa con el botón **"Postularme a esta Oferta"** (`POSTULA_A`).
 - **Credenciales:**
-  - Puede iniciar sesión con el correo de cualquiera de los usuarios de prueba creados (contraseña: `123456`) usando el selector rápido de login, o bien registrar una nueva cuenta desde `/register`.
+  - Cada usuario tiene asignada una **contraseña aleatoria de 6 dígitos** (ej. `492018`, `839102`), visible y editable por el Administrador en la tabla de usuarios. En la pantalla de login, el selector rápido de usuarios autocompleta la contraseña correspondiente para facilitar pruebas. También se puede registrar una nueva cuenta desde `/register`.
+- **Gestión de Contraseñas desde el Panel de Administrador:**
+  - En la sección `/usuarios`, el Administrador puede ver la contraseña de cada usuario y modificarla en tiempo real mediante el botón con ícono de llave (<i class="fas fa-key"></i>), generando claves aleatorias de 6 dígitos o asignando una clave manual.
 
 ---
 
