@@ -51,9 +51,15 @@
             </div>
             <div class="card-footer bg-dark">
                 {% if is_logged_in and not is_admin and not is_empresa %}
-                <button class="btn btn-sm btn-success w-100 mb-2" onclick="applyDirectly('{{ o.id }}')">
-                    <i class="fas fa-paper-plane me-1"></i>Postularme a esta Oferta
-                </button>
+                    {% if mis_postulaciones and o.id in mis_postulaciones %}
+                    <button class="btn btn-sm btn-outline-success w-100 mb-2" disabled>
+                        <i class="fas fa-check-circle me-1"></i>¡Ya te has postulado!
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-success w-100 mb-2" onclick="applyDirectly('{{ o.id }}', this)">
+                        <i class="fas fa-paper-plane me-1"></i>Postularme a esta Oferta
+                    </button>
+                    {% endif %}
                 {% endif %}
                 <div class="btn-group w-100 mb-2">
                     <button class="btn btn-sm btn-outline-warning" onclick="toggleHabilidades('{{ o.id }}', this)">
@@ -200,10 +206,15 @@ let allSkillsCache = null;
 let allUsersCache = null;
 let allCompaniesCache = null;
 
-async function applyDirectly(offerId) {
+async function applyDirectly(offerId, btn) {
     if (!CURRENT_USER_ID) {
         window.location.href = '/login?next=' + window.location.pathname;
         return;
+    }
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Postulando...';
     }
     try {
         await apiPost('/api/relaciones/postula', {
@@ -212,8 +223,18 @@ async function applyDirectly(offerId) {
             fecha: new Date().toISOString().split('T')[0]
         });
         showToast('¡Te has postulado exitosamente a esta vacante!', 'success');
+        if (btn) {
+            btn.className = 'btn btn-sm btn-outline-success w-100 mb-2';
+            btn.innerHTML = '<i class="fas fa-check-circle me-1"></i>¡Ya te has postulado!';
+            btn.disabled = true;
+        }
     } catch(e) {
         console.error(e);
+        showToast(e.message || 'Error al postularse a la oferta', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 

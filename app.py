@@ -325,7 +325,11 @@ def proyectos_page():
 @app.route("/ofertas")
 def ofertas_page():
     ofertas = db.get_all_ofertas()
-    return render_template("ofertas.html", ofertas=ofertas)
+    mis_postulaciones = set()
+    if session.get("role") == "usuario" and "user_id" in session:
+        user_apps = db.get_user_applications(session["user_id"])
+        mis_postulaciones = {a["id"] for a in user_apps if a.get("id")}
+    return render_template("ofertas.html", ofertas=ofertas, mis_postulaciones=mis_postulaciones)
 
 
 @app.route("/analitica")
