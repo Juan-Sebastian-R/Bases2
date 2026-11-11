@@ -18,3 +18,4 @@ with db.driver.session() as session:
             print(f"  ✓ {r['nombre']} ya tiene clave: {current_pwd}")
 
 print("\n¡Listo! Todos los usuarios tienen contraseñas de 6 dígitos.")
+

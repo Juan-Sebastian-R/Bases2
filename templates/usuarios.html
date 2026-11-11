@@ -3,7 +3,8 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-users text-success me-2"></i>{% if is_admin %}Gestión de Usuarios (Admin){% else %}Red de Profesionales{% endif %}</h2>
+    <h2><i class="fas fa-users text-success me-2"></i>{% if is_admin %}Gestión de Usuarios (Admin){% else %}Red de
+        Profesionales{% endif %}</h2>
     {% if is_admin %}
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#usuarioModal" onclick="resetForm()">
         <i class="fas fa-plus me-1"></i>Nuevo Usuario
@@ -42,7 +43,8 @@
                     <td>{{ u.ubicacion }}</td>
                     {% if is_admin %}
                     <td>
-                        <span class="badge bg-dark border border-warning text-warning font-monospace px-2 py-1" id="pwd-badge-{{ u.id }}">
+                        <span class="badge bg-dark border border-warning text-warning font-monospace px-2 py-1"
+                            id="pwd-badge-{{ u.id }}">
                             {{ u.password or '123456' }}
                         </span>
                     </td>
@@ -52,13 +54,16 @@
                             <i class="fas fa-eye me-1"></i>Ver Perfil
                         </a>
                         {% if is_admin %}
-                        <button class="btn btn-sm btn-outline-warning me-1" title="Modificar Contraseña" onclick="openPasswordModal('{{ u.id }}', '{{ u.nombre }}', '{{ u.password or '' }}')">
+                        <button class="btn btn-sm btn-outline-warning me-1" title="Modificar Contraseña"
+                            onclick="openPasswordModal('{{ u.id }}', '{{ u.nombre }}', '{{ u.password or '' }}')">
                             <i class="fas fa-key"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary me-1" title="Editar Información" onclick="editUser(this)">
+                        <button class="btn btn-sm btn-outline-primary me-1" title="Editar Información"
+                            onclick="editUser(this)">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deleteUser('{{ u.id }}')">
+                        <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="deleteUser('{{ u.id }}')">
                             <i class="fas fa-trash"></i>
                         </button>
                         {% endif %}
@@ -103,12 +108,15 @@
                     <div class="mb-3">
                         <label class="form-label">Contraseña (6 dígitos)</label>
                         <div class="input-group">
-                            <input type="text" class="form-control font-monospace" id="passwordField" placeholder="ej. 839201">
-                            <button class="btn btn-outline-secondary" type="button" onclick="generateRandomToField('passwordField')">
+                            <input type="text" class="form-control font-monospace" id="passwordField"
+                                placeholder="ej. 839201">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="generateRandomToField('passwordField')">
                                 <i class="fas fa-dice me-1"></i>Generar Aleatoria
                             </button>
                         </div>
-                        <small class="text-muted">Si se deja vacío al crear, se generará una aleatoria de 6 dígitos automáticamente.</small>
+                        <small class="text-muted">Si se deja vacío al crear, se generará una aleatoria de 6 dígitos
+                            automáticamente.</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Resumen</label>
@@ -140,17 +148,22 @@
                 <input type="hidden" id="pwdUserId">
                 <div class="mb-3">
                     <label class="form-label text-light small fw-bold">Usuario</label>
-                    <input type="text" class="form-control bg-black text-light border-secondary" id="pwdUserName" readonly>
+                    <input type="text" class="form-control bg-black text-light border-secondary" id="pwdUserName"
+                        readonly>
                 </div>
                 <div class="mb-3">
                     <label class="form-label text-light small fw-bold">Nueva Contraseña (6 dígitos)</label>
                     <div class="input-group">
-                        <input type="text" class="form-control bg-black text-warning font-monospace fs-5 fw-bold border-secondary" id="pwdNewPassword" maxlength="12" placeholder="ej. 492018">
-                        <button class="btn btn-outline-warning" type="button" onclick="generateRandomToField('pwdNewPassword')">
+                        <input type="text"
+                            class="form-control bg-black text-warning font-monospace fs-5 fw-bold border-secondary"
+                            id="pwdNewPassword" maxlength="12" placeholder="ej. 492018">
+                        <button class="btn btn-outline-warning" type="button"
+                            onclick="generateRandomToField('pwdNewPassword')">
                             <i class="fas fa-random me-1"></i>6 Dígitos
                         </button>
                     </div>
-                    <small class="text-muted">Puedes ingresar una clave personalizada o pulsar el botón para generar 6 dígitos al azar.</small>
+                    <small class="text-muted">Puedes ingresar una clave personalizada o pulsar el botón para generar 6
+                        dígitos al azar.</small>
                 </div>
             </div>
             <div class="modal-footer border-secondary">
