@@ -28,7 +28,35 @@
 
 ---
 
-## 🎯 2. ¿Para qué sirve la Aplicación y qué Problema Resuelve?
+## 🔐 2. Sistema de Autenticación y Roles de Usuario
+
+La aplicación cuenta con un sistema de sesiones basado en dos roles claramente diferenciados:
+
+### A. Rol Administrador (Admin)
+- **Acceso:** Total e ilimitado a todas las herramientas ya existentes.
+- **Capacidades exclusivas:**
+  - Crear, editar y eliminar usuarios, empresas, habilidades, proyectos y ofertas laborales.
+  - Ver todos los postulantes de cualquier oferta.
+  - Asignar o remover integrantes en cualquier proyecto.
+  - Visualizar el panel de analítica global.
+- **Credenciales por defecto:**
+  - **Correo:** `admin@pronet.com`
+  - **Contraseña:** `admin123`
+  - *(O mediante el botón de 1 clic "Entrar como Administrador" en la pantalla de login)*.
+
+### B. Rol Usuario Profesional (Usuario Estándar)
+- **Acceso:** Personalizado enfocado en su propia trayectoria y red.
+- **Capacidades:**
+  - **Mi Perfil (`/mi-perfil`):** Administra sus propias habilidades técnicas, su experiencia laboral en empresas, sus proyectos y sus postulaciones a vacantes.
+  - **Explorar Red:** Puede explorar otros profesionales, ver sus perfiles y conectarse con ellos mediante el botón **"Conectar en mi Red"** (`CONECTA_CON`).
+  - **Privacidad y Control:** No puede editar ni borrar la información de otros profesionales.
+  - **Bolsa de Empleo:** Puede postularse directamente a cualquier vacante activa con el botón **"Postularme a esta Oferta"** (`POSTULA_A`).
+- **Credenciales:**
+  - Puede iniciar sesión con el correo de cualquiera de los usuarios de prueba creados (contraseña: `123456`) usando el selector rápido de login, o bien registrar una nueva cuenta desde `/register`.
+
+---
+
+## 🎯 3. ¿Para qué sirve la Aplicación y qué Problema Resuelve?
 
 Las redes profesionales modernas (como LinkedIn o redes de networking académico) poseen datos **altamente interconectados**. En una base de datos relacional tradicional (SQL):
 - Consultar un camino entre un usuario y una empresa a través de 3 o 4 grados de separación requiere múltiples sentencias `JOIN` complejas, lentas y costosas a nivel de CPU y memoria.
