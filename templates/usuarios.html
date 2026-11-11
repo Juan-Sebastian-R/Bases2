@@ -210,7 +210,9 @@
     function openPasswordModal(id, nombre, currentPwd) {
         document.getElementById('pwdUserId').value = id;
         document.getElementById('pwdUserName').value = nombre;
-        document.getElementById('pwdNewPassword').value = currentPwd || generateRandom6Digits();
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        const effectivePwd = (row && row.dataset.password) || currentPwd;
+        document.getElementById('pwdNewPassword').value = effectivePwd || generateRandom6Digits();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('changePasswordModal')).show();
     }
 

@@ -77,6 +77,11 @@ def login_page():
             return redirect(url_for("dashboard_page"))
         return redirect(url_for("mi_perfil"))
 
+    try:
+        db.ensure_user_passwords()
+    except Exception:
+        pass
+
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
@@ -177,6 +182,10 @@ def dashboard_page():
 
 @app.route("/usuarios")
 def usuarios_page():
+    try:
+        db.ensure_user_passwords()
+    except Exception:
+        pass
     usuarios = db.get_all_usuarios()
     return render_template("usuarios.html", usuarios=usuarios)
 

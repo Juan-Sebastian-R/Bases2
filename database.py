@@ -31,12 +31,15 @@ class Neo4jDB:
     # ──────────────────────────── USUARIO CRUD ────────────────────────────
 
     def create_usuario(self, data):
+        import random
         with self.driver.session() as session:
             data["id"] = data.get("id", str(uuid.uuid4()))
+            password = str(data.get("password") or random.randint(100000, 999999)).strip()
             result = session.run(
                 """
                 CREATE (n:Usuario {id: $id, nombre: $nombre, email: $email,
-                        titulo: $titulo, ubicacion: $ubicacion, resumen: $resumen})
+                        titulo: $titulo, ubicacion: $ubicacion, resumen: $resumen,
+                        password: $password})
                 RETURN n
                 """,
                 id=data["id"],
@@ -45,6 +48,7 @@ class Neo4jDB:
                 titulo=data.get("titulo", ""),
                 ubicacion=data.get("ubicacion", ""),
                 resumen=data.get("resumen", ""),
+                password=password,
             )
             return self._node_to_dict(result.single())
 
@@ -77,7 +81,8 @@ class Neo4jDB:
                     n.email = coalesce($email, n.email),
                     n.titulo = coalesce($titulo, n.titulo),
                     n.ubicacion = coalesce($ubicacion, n.ubicacion),
-                    n.resumen = coalesce($resumen, n.resumen)
+                    n.resumen = coalesce($resumen, n.resumen),
+                    n.password = coalesce($password, n.password)
                 RETURN n
                 """,
                 id=uid,
@@ -86,8 +91,28 @@ class Neo4jDB:
                 titulo=data.get("titulo"),
                 ubicacion=data.get("ubicacion"),
                 resumen=data.get("resumen"),
+                password=str(data["password"]).strip() if data.get("password") else None,
             )
             record = result.single()
+            return self._node_to_dict(record) if record else None
+
+    def update_user_password(self, uid, new_password):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (n:Usuario {id: $id}) SET n.password = $password RETURN n",
+                id=uid, password=str(new_password).strip()
+            )
+            record = result.single()
+            return self._node_to_dict(record) if record else None
+
+    def ensure_user_passwords(self):
+        import random
+        with self.driver.session() as session:
+            # Query all users that don't have a password or have empty password
+            result = session.run("MATCH (n:Usuario) WHERE n.password IS NULL OR n.password = '' RETURN n.id AS id")
+            for r in result:
+                pwd = str(random.randint(100000, 999999))
+                session.run("MATCH (n:Usuario {id: $id}) SET n.password = $pwd", id=r["id"], pwd=pwd)
             return self._node_to_dict(record) if record else None
 
     def delete_usuario(self, uid):
