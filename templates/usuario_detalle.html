@@ -492,7 +492,7 @@
             if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
             list.innerHTML = data.map(c => `
                 <div class="py-1"><a href="/usuarios/${c.id}" class="text-info text-decoration-none">${c.nombre}</a>
-                <small class="text-muted">(${c.mutuos || c.mutual_count || 0} contactos en común)</small></div>
+                <small class="text-muted">(${c.contactos_mutuos ?? c.mutual_count ?? c.mutuos ?? 0} contactos en común)</small></div>
             `).join('');
         } catch(e) { document.getElementById('recContactosLoading').classList.add('d-none'); }
 
@@ -504,7 +504,7 @@
             if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
             list.innerHTML = data.map(o => `
                 <div class="py-1"><strong>${o.titulo}</strong>
-                <small class="text-muted">(${o.match_count || 0} habilidades en común)</small></div>
+                <small class="text-muted">(${o.habilidades_coincidentes ?? o.match_count ?? 0} habilidades en común)</small></div>
             `).join('');
         } catch(e) { document.getElementById('recEmpleosLoading').classList.add('d-none'); }
 
@@ -517,7 +517,7 @@
             list.innerHTML = data.map(u => `
                 <span class="badge bg-success me-2 mb-2 fs-6">
                     <a href="/usuarios/${u.id}" class="text-white text-decoration-none">${u.nombre}</a>
-                    <small>(${u.shared_skills || u.common_count || 0})</small>
+                    <small>(${u.habilidades_comunes ?? u.shared_skills ?? u.common_skills ?? u.common_count ?? 0})</small>
                 </span>
             `).join('');
         } catch(e) { document.getElementById('recSimilaresLoading').classList.add('d-none'); }

@@ -576,7 +576,13 @@ class Neo4jDB:
                 uid=user_id,
             )
             return [
-                {**dict(r["other"]), "habilidades_comunes": r["common_skills"]}
+                {
+                    **dict(r["other"]),
+                    "habilidades_comunes": r["common_skills"],
+                    "common_skills": r["common_skills"],
+                    "shared_skills": r["common_skills"],
+                    "common_count": r["common_skills"],
+                }
                 for r in result
             ]
 
@@ -618,16 +624,21 @@ class Neo4jDB:
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH (u:Usuario {id: $uid})-[:CONECTA_CON]->(friend)-[:CONECTA_CON]->(fof:Usuario)
+                MATCH (u:Usuario {id: $uid})-[:CONECTA_CON]-(friend:Usuario)-[:CONECTA_CON]-(fof:Usuario)
                 WHERE fof.id <> $uid
-                  AND NOT (u)-[:CONECTA_CON]->(fof)
+                  AND NOT (u)-[:CONECTA_CON]-(fof)
                 RETURN fof, count(DISTINCT friend) AS mutual_count
                 ORDER BY mutual_count DESC
                 """,
                 uid=user_id,
             )
             return [
-                {**dict(r["fof"]), "contactos_mutuos": r["mutual_count"]}
+                {
+                    **dict(r["fof"]),
+                    "contactos_mutuos": r["mutual_count"],
+                    "mutual_count": r["mutual_count"],
+                    "mutuos": r["mutual_count"],
+                }
                 for r in result
             ]
 
@@ -636,13 +647,18 @@ class Neo4jDB:
             result = session.run(
                 """
                 MATCH (u:Usuario {id: $uid})-[:TIENE_HABILIDAD]->(h:Habilidad)<-[:REQUIERE]-(o:Oferta)
+                WHERE NOT (u)-[:POSTULA_A]->(o)
                 RETURN o, count(h) AS match_count
                 ORDER BY match_count DESC
                 """,
                 uid=user_id,
             )
             return [
-                {**dict(r["o"]), "habilidades_coincidentes": r["match_count"]}
+                {
+                    **dict(r["o"]),
+                    "habilidades_coincidentes": r["match_count"],
+                    "match_count": r["match_count"],
+                }
                 for r in result
             ]
 
