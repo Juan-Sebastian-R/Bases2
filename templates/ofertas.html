@@ -4,7 +4,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-briefcase text-danger me-2"></i>Ofertas Laborales</h2>
-    {% if is_admin %}
+    {% if is_admin or is_empresa %}
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#ofertaModal" onclick="resetOfertaForm()">
         <i class="fas fa-plus me-1"></i>Nueva Oferta
     </button>
@@ -17,10 +17,11 @@
     <div class="col-md-6 col-lg-4">
         <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #F44336 !important;"
              data-id="{{ o.id }}" data-titulo="{{ o.titulo }}" data-modalidad="{{ o.modalidad }}"
-             data-salario="{{ o.salario }}" data-descripcion="{{ o.descripcion }}" data-fecha="{{ o.fecha_publicacion }}">
+             data-salario="{{ o.salario }}" data-descripcion="{{ o.descripcion }}" data-fecha="{{ o.fecha_publicacion }}"
+             data-empresa-id="{{ o.empresa_id or '' }}">
             <div class="card-header bg-dark d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-white"><i class="fas fa-briefcase text-danger me-2"></i>{{ o.titulo }}</h5>
-                {% if is_admin %}
+                {% if is_admin or (is_empresa and current_user and current_user.id == o.empresa_id) %}
                 <div>
                     <button class="btn btn-sm btn-outline-warning" onclick="editOferta(this)" title="Editar">
                         <i class="fas fa-edit"></i>
@@ -33,9 +34,14 @@
             </div>
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge {% if o.modalidad == 'remoto' %}bg-success{% elif o.modalidad == 'hibrido' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
-                        {{ o.modalidad or 'presencial' }}
-                    </span>
+                    <div>
+                        <span class="badge {% if o.modalidad == 'remoto' %}bg-success{% elif o.modalidad == 'hibrido' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                            {{ o.modalidad or 'presencial' }}
+                        </span>
+                        {% if o.empresa_nombre %}
+                        <span class="badge bg-secondary ms-1"><i class="fas fa-building me-1"></i>{{ o.empresa_nombre }}</span>
+                        {% endif %}
+                    </div>
                     <span class="text-success fw-bold"><i class="fas fa-money-bill-wave me-1"></i>{{ o.salario or 'A convenir' }}</span>
                 </div>
                 <p class="text-light mb-3">{{ o.descripcion or 'Sin descripción' }}</p>
@@ -44,7 +50,7 @@
                 {% endif %}
             </div>
             <div class="card-footer bg-dark">
-                {% if is_logged_in and not is_admin %}
+                {% if is_logged_in and not is_admin and not is_empresa %}
                 <button class="btn btn-sm btn-success w-100 mb-2" onclick="applyDirectly('{{ o.id }}')">
                     <i class="fas fa-paper-plane me-1"></i>Postularme a esta Oferta
                 </button>
@@ -53,7 +59,7 @@
                     <button class="btn btn-sm btn-outline-warning" onclick="toggleHabilidades('{{ o.id }}', this)">
                         <i class="fas fa-cogs me-1"></i>Requisitos
                     </button>
-                    {% if is_admin %}
+                    {% if is_admin or (is_empresa and current_user and current_user.id == o.empresa_id) %}
                     <button class="btn btn-sm btn-outline-info" onclick="togglePostulantes('{{ o.id }}', this)">
                         <i class="fas fa-user-check me-1"></i>Postulantes
                     </button>
@@ -188,7 +194,8 @@
 {% block scripts %}
 <script>
 const CURRENT_USER_ID = '{{ current_user.id if current_user else "" }}';
-const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+const IS_ADMIN = '{{ "true" if is_admin else "false" }}' === 'true';
+const IS_EMPRESA = '{{ "true" if is_empresa else "false" }}' === 'true';
 let allSkillsCache = null;
 let allUsersCache = null;
 let allCompaniesCache = null;
@@ -217,16 +224,20 @@ async function resetOfertaForm() {
     document.getElementById('ofeSalario').value = '';
     document.getElementById('ofeDescripcion').value = '';
     document.getElementById('ofertaModalTitle').textContent = 'Nueva Oferta Laboral';
-    document.getElementById('empresaSelectGroup').style.display = 'block';
 
-    const empSelect = document.getElementById('ofeEmpresaId');
-    if (!allCompaniesCache) {
-        allCompaniesCache = await apiGet('/api/empresas');
+    if (IS_EMPRESA) {
+        document.getElementById('empresaSelectGroup').style.display = 'none';
+    } else {
+        document.getElementById('empresaSelectGroup').style.display = 'block';
+        const empSelect = document.getElementById('ofeEmpresaId');
+        if (!allCompaniesCache) {
+            allCompaniesCache = await apiGet('/api/empresas');
+        }
+        empSelect.innerHTML = '<option value="">Seleccionar empresa...</option>';
+        allCompaniesCache.forEach(c => {
+            empSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
+        });
     }
-    empSelect.innerHTML = '<option value="">Seleccionar empresa...</option>';
-    allCompaniesCache.forEach(c => {
-        empSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
-    });
 }
 
 function editOferta(btn) {
@@ -238,7 +249,7 @@ function editOferta(btn) {
     document.getElementById('ofeDescripcion').value = card.dataset.descripcion || '';
     document.getElementById('ofertaModalTitle').textContent = 'Editar Oferta Laboral';
     document.getElementById('empresaSelectGroup').style.display = 'none';
-    new bootstrap.Modal(document.getElementById('ofertaModal')).show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('ofertaModal')).show();
 }
 
 async function saveOferta() {
@@ -261,17 +272,21 @@ async function saveOferta() {
             await apiPut(`/api/ofertas/${id}`, data);
             showToast('Oferta actualizada con éxito', 'success');
         } else {
-            const empresaId = document.getElementById('ofeEmpresaId').value;
+            if (IS_EMPRESA) {
+                data.company_id = CURRENT_USER_ID;
+            } else {
+                data.company_id = document.getElementById('ofeEmpresaId').value;
+            }
             const newOffer = await apiPost('/api/ofertas', data);
-            if (empresaId && newOffer && newOffer.id) {
+            if (!IS_EMPRESA && data.company_id && newOffer && newOffer.id) {
                 await apiPost('/api/relaciones/publica', {
-                    company_id: empresaId,
+                    company_id: data.company_id,
                     offer_id: newOffer.id
                 });
             }
             showToast('Oferta publicada con éxito', 'success');
         }
-        bootstrap.Modal.getInstance(document.getElementById('ofertaModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('ofertaModal')).hide();
         setTimeout(() => location.reload(), 600);
     } catch (e) {
         console.error(e);
@@ -300,6 +315,10 @@ async function toggleHabilidades(ofertaId, btn) {
 }
 
 async function loadHabilidades(ofertaId) {
+    const card = document.querySelector(`.card[data-id="${ofertaId}"]`);
+    const offerEmpresaId = card ? card.dataset.empresaId : '';
+    const canManageSkills = IS_ADMIN || (IS_EMPRESA && CURRENT_USER_ID && CURRENT_USER_ID === offerEmpresaId);
+
     const container = document.getElementById(`habs-${ofertaId}`);
     try {
         const skills = await apiGet(`/api/ofertas/${ofertaId}/habilidades`);
@@ -309,20 +328,24 @@ async function loadHabilidades(ofertaId) {
         } else {
             html += '<div class="d-flex flex-wrap gap-1 mb-2">';
             skills.forEach(s => {
+                const deleteBtn = canManageSkills ? `
+                    <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeSkillOferta('${ofertaId}', '${s.id}')" title="Eliminar requisito">
+                        <i class="fas fa-times"></i>
+                    </button>` : '';
                 html += `
                     <span class="badge bg-dark border border-warning text-warning d-inline-flex align-items-center">
                         ${escapeHtml(s.nombre)}
-                        <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeSkillOferta('${ofertaId}', '${s.id}')">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        ${deleteBtn}
                     </span>
                 `;
             });
             html += '</div>';
         }
-        html += `<button class="btn btn-xs btn-outline-warning w-100 py-1" onclick="openAddSkillOfertaModal('${ofertaId}')">
-                    <i class="fas fa-plus me-1"></i>Añadir Habilidad Requerida
-                 </button>`;
+        if (canManageSkills) {
+            html += `<button class="btn btn-xs btn-outline-warning w-100 py-1" onclick="openAddSkillOfertaModal('${ofertaId}')">
+                        <i class="fas fa-plus me-1"></i>Añadir Habilidad Requerida
+                     </button>`;
+        }
         container.innerHTML = html;
     } catch (e) {
         container.innerHTML = '<p class="text-danger small">Error al cargar habilidades</p>';

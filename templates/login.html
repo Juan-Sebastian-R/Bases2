@@ -56,15 +56,32 @@
                         {% if usuarios %}
                         <div class="input-group input-group-sm mt-1">
                             <select class="form-select bg-dark text-light border-secondary" id="quickUserSelect" onchange="autoFillUser(this)">
-                                <option value="">-- O seleccionar Usuario de la Red --</option>
+                                <option value="">-- O seleccionar Usuario Profesional --</option>
                                 {% for u in usuarios %}
                                 <option value="{{ u.email }}" data-password="{{ u.password or '123456' }}">
-                                    {{ u.nombre }} [Clave: {{ u.password or '123456' }}]
+                                    👤 {{ u.nombre }} [Clave: {{ u.password or '123456' }}]
                                 </option>
                                 {% endfor %}
                             </select>
                             <button class="btn btn-outline-info" type="button" onclick="loginQuickUser()">
                                 <i class="fas fa-user-check"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Quick Demo Empresa Select -->
+                        {% if empresas %}
+                        <div class="input-group input-group-sm mt-1">
+                            <select class="form-select bg-dark text-info border-secondary" id="quickEmpresaSelect" onchange="autoFillUser(this)">
+                                <option value="">-- O seleccionar Cuenta Empresa --</option>
+                                {% for e in empresas %}
+                                <option value="{{ e.email }}" data-password="{{ e.password or '123456' }}">
+                                    🏢 {{ e.nombre }} [Clave: {{ e.password or '123456' }}]
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-primary" type="button" onclick="loginQuickEmpresa()">
+                                <i class="fas fa-building"></i>
                             </button>
                         </div>
                         {% endif %}
@@ -94,6 +111,16 @@ function loginQuickUser() {
     const select = document.getElementById('quickUserSelect');
     if (!select.value) {
         showToast('Selecciona un usuario de la lista', 'warning');
+        return;
+    }
+    autoFillUser(select);
+    document.querySelector('form').submit();
+}
+
+function loginQuickEmpresa() {
+    const select = document.getElementById('quickEmpresaSelect');
+    if (!select.value) {
+        showToast('Selecciona una empresa de la lista', 'warning');
         return;
     }
     autoFillUser(select);

@@ -126,12 +126,19 @@ class Neo4jDB:
     # ──────────────────────────── EMPRESA CRUD ────────────────────────────
 
     def create_empresa(self, data):
+        import random
         with self.driver.session() as session:
             data["id"] = data.get("id", str(uuid.uuid4()))
+            password = str(data.get("password") or random.randint(100000, 999999)).strip()
+            email = data.get("email")
+            if not email:
+                clean_name = "".join(c for c in data.get("nombre", "empresa").lower() if c.isalnum())
+                email = f"contacto@{clean_name or 'empresa'}.com"
             result = session.run(
                 """
                 CREATE (n:Empresa {id: $id, nombre: $nombre, industria: $industria,
-                        ubicacion: $ubicacion, descripcion: $descripcion, sitio_web: $sitio_web})
+                        ubicacion: $ubicacion, descripcion: $descripcion, sitio_web: $sitio_web,
+                        email: $email, password: $password})
                 RETURN n
                 """,
                 id=data["id"],
@@ -140,6 +147,8 @@ class Neo4jDB:
                 ubicacion=data.get("ubicacion", ""),
                 descripcion=data.get("descripcion", ""),
                 sitio_web=data.get("sitio_web", ""),
+                email=email,
+                password=password,
             )
             return self._node_to_dict(result.single())
 
@@ -154,6 +163,33 @@ class Neo4jDB:
             record = result.single()
             return self._node_to_dict(record) if record else None
 
+    def get_empresa_by_email(self, email):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (n:Empresa) WHERE toLower(n.email) = toLower($email) RETURN n",
+                email=email.strip()
+            )
+            record = result.single()
+            return self._node_to_dict(record) if record else None
+
+    def ensure_empresa_passwords(self):
+        import random
+        with self.driver.session() as session:
+            result = session.run("MATCH (n:Empresa) RETURN n")
+            for r in result:
+                emp = dict(r["n"])
+                eid = emp["id"]
+                name = emp.get("nombre", "empresa")
+                clean_name = "".join(c for c in name.lower() if c.isalnum())
+                updates = {}
+                if not emp.get("password"):
+                    updates["password"] = str(random.randint(100000, 999999))
+                if not emp.get("email"):
+                    updates["email"] = f"contacto@{clean_name or 'empresa'}.com"
+                if updates:
+                    set_clauses = ", ".join([f"n.{k} = ${k}" for k in updates.keys()])
+                    session.run(f"MATCH (n:Empresa {{id: $id}}) SET {set_clauses}", id=eid, **updates)
+
     def update_empresa(self, uid, data):
         with self.driver.session() as session:
             result = session.run(
@@ -163,7 +199,9 @@ class Neo4jDB:
                     n.industria = coalesce($industria, n.industria),
                     n.ubicacion = coalesce($ubicacion, n.ubicacion),
                     n.descripcion = coalesce($descripcion, n.descripcion),
-                    n.sitio_web = coalesce($sitio_web, n.sitio_web)
+                    n.sitio_web = coalesce($sitio_web, n.sitio_web),
+                    n.email = coalesce($email, n.email),
+                    n.password = coalesce($password, n.password)
                 RETURN n
                 """,
                 id=uid,
@@ -172,6 +210,8 @@ class Neo4jDB:
                 ubicacion=data.get("ubicacion"),
                 descripcion=data.get("descripcion"),
                 sitio_web=data.get("sitio_web"),
+                email=data.get("email"),
+                password=str(data["password"]).strip() if data.get("password") else None,
             )
             record = result.single()
             return self._node_to_dict(record) if record else None
@@ -315,8 +355,30 @@ class Neo4jDB:
 
     def get_all_ofertas(self):
         with self.driver.session() as session:
-            result = session.run("MATCH (n:Oferta) RETURN n ORDER BY n.titulo")
-            return [self._node_to_dict(r) for r in result]
+            result = session.run(
+                """
+                MATCH (n:Oferta)
+                OPTIONAL MATCH (e:Empresa)-[:PUBLICA]->(n)
+                RETURN n, e.id AS empresa_id, e.nombre AS empresa_nombre
+                ORDER BY n.titulo
+                """
+            )
+            ofertas = []
+            for r in result:
+                item = self._node_to_dict(r, "n")
+                item["empresa_id"] = r["empresa_id"]
+                item["empresa_nombre"] = r["empresa_nombre"] or ""
+                ofertas.append(item)
+            return ofertas
+
+    def get_offer_company(self, offer_id):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {id: $oid}) RETURN e",
+                oid=offer_id,
+            )
+            record = result.single()
+            return self._node_to_dict(record, "e") if record else None
 
     def get_oferta(self, uid):
         with self.driver.session() as session:

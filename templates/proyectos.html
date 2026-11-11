@@ -109,16 +109,20 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Agregar Integrante al Proyecto</h5>
+                <h5 class="modal-title" id="addMiembroModalTitle">Agregar Integrante al Proyecto</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="addMiembroProyId">
-                <div class="mb-3">
+                <div class="mb-3" id="selectUserGroup">
                     <label class="form-label">Seleccionar Usuario</label>
                     <select class="form-select" id="addMiembroUserId">
                         <option value="">Cargando usuarios...</option>
                     </select>
+                </div>
+                <div class="mb-3" id="fixedUserGroup" style="display:none;">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" class="form-control bg-dark text-light border-secondary" id="fixedUserName" readonly>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Rol en el Proyecto</label>
@@ -128,7 +132,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success" onclick="confirmAddMiembro()">
-                    <i class="fas fa-user-plus me-1"></i>Asignar
+                    <i class="fas fa-user-plus me-1"></i><span id="addMiembroBtnText">Asignar</span>
                 </button>
             </div>
         </div>
@@ -138,6 +142,10 @@
 
 {% block scripts %}
 <script>
+const CURRENT_USER_ID = '{{ current_user.id if current_user else "" }}';
+const CURRENT_USER_NAME = '{{ (current_user.nombre if current_user else "") | escape }}';
+const IS_ADMIN = '{{ "true" if is_admin else "false" }}' === 'true';
+const IS_LOGGED_IN = '{{ "true" if is_logged_in else "false" }}' === 'true';
 let allUsersCache = null;
 
 function resetProyectoForm() {
@@ -157,7 +165,7 @@ function editProyecto(btn) {
     document.getElementById('proyFechaInicio').value = card.dataset.fecha_inicio || '';
     document.getElementById('proyDescripcion').value = card.dataset.descripcion || '';
     document.getElementById('proyectoModalTitle').textContent = 'Editar Proyecto';
-    new bootstrap.Modal(document.getElementById('proyectoModal')).show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('proyectoModal')).show();
 }
 
 async function saveProyecto() {
@@ -182,7 +190,7 @@ async function saveProyecto() {
             await apiPost('/api/proyectos', data);
             showToast('Proyecto creado', 'success');
         }
-        bootstrap.Modal.getInstance(document.getElementById('proyectoModal')).hide();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('proyectoModal')).hide();
         setTimeout(() => location.reload(), 600);
     } catch (e) {
         console.error(e);
@@ -216,12 +224,23 @@ async function loadMiembros(proyectoId) {
     const container = document.getElementById(`miembros-${proyectoId}`);
     try {
         const miembros = await apiGet(`/api/proyectos/${proyectoId}/miembros`);
+        const isUserMember = miembros.some(m => m.usuario && m.usuario.id === CURRENT_USER_ID);
+
         if (!miembros || miembros.length === 0) {
+            let actionBtn = '';
+            if (IS_ADMIN) {
+                actionBtn = `<button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                    <i class="fas fa-plus me-1"></i>Agregar Integrante
+                </button>`;
+            } else if (IS_LOGGED_IN) {
+                actionBtn = `<button class="btn btn-sm btn-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                    <i class="fas fa-user-plus me-1"></i>Unirme a este Proyecto
+                </button>`;
+            }
+
             container.innerHTML = `
                 <p class="text-muted small mb-2">No hay integrantes registrados.</p>
-                <button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
-                    <i class="fas fa-plus me-1"></i>Agregar Integrante
-                </button>
+                ${actionBtn}
             `;
             return;
         }
@@ -229,23 +248,55 @@ async function loadMiembros(proyectoId) {
         let html = '<div class="list-group list-group-flush mb-2">';
         miembros.forEach(m => {
             const u = m.usuario || {};
+            const isMe = u.id === CURRENT_USER_ID;
+            let deleteBtn = '';
+            if (IS_ADMIN) {
+                deleteBtn = `
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeMiembro('${u.id}', '${proyectoId}')" title="Quitar del proyecto">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            } else if (isMe) {
+                deleteBtn = `
+                    <button class="btn btn-sm btn-outline-danger py-0 px-2 small" onclick="removeMiembro('${u.id}', '${proyectoId}')" title="Abandonar proyecto">
+                        <i class="fas fa-sign-out-alt me-1"></i>Salir
+                    </button>
+                `;
+            }
+
             html += `
                 <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center px-2 py-1">
                     <div>
                         <a href="/usuarios/${u.id}" class="text-info text-decoration-none fw-bold small">${escapeHtml(u.nombre || 'Usuario')}</a>
+                        ${isMe ? '<span class="badge bg-success ms-1 small">Tú</span>' : ''}
                         <span class="badge bg-secondary ms-1 small">${escapeHtml(m.rol || 'Miembro')}</span>
                     </div>
-                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeMiembro('${u.id}', '${proyectoId}')" title="Quitar">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    ${deleteBtn}
                 </div>
             `;
         });
-        html += `</div>
-            <button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
-                <i class="fas fa-plus me-1"></i>Agregar Integrante
-            </button>
-        `;
+        html += '</div>';
+
+        if (IS_ADMIN) {
+            html += `
+                <button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                    <i class="fas fa-plus me-1"></i>Agregar Integrante
+                </button>
+            `;
+        } else if (IS_LOGGED_IN && !isUserMember) {
+            html += `
+                <button class="btn btn-sm btn-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                    <i class="fas fa-user-plus me-1"></i>Unirme a este Proyecto
+                </button>
+            `;
+        } else if (IS_LOGGED_IN && isUserMember) {
+            html += `
+                <div class="text-center py-1">
+                    <small class="text-success"><i class="fas fa-check-circle me-1"></i>Ya participas en este proyecto</small>
+                </div>
+            `;
+        }
+
         container.innerHTML = html;
     } catch (e) {
         container.innerHTML = '<p class="text-danger small">Error al cargar integrantes</p>';
@@ -255,23 +306,35 @@ async function loadMiembros(proyectoId) {
 async function openAddMiembroModal(proyectoId) {
     document.getElementById('addMiembroProyId').value = proyectoId;
     document.getElementById('addMiembroRol').value = '';
-    const select = document.getElementById('addMiembroUserId');
-    
-    if (!allUsersCache) {
-        allUsersCache = await apiGet('/api/usuarios');
-    }
-    
-    select.innerHTML = '<option value="">Selecciona un usuario...</option>';
-    allUsersCache.forEach(u => {
-        select.innerHTML += `<option value="${u.id}">${escapeHtml(u.nombre)} (${escapeHtml(u.titulo || 'Profesional')})</option>`;
-    });
 
-    new bootstrap.Modal(document.getElementById('addMiembroModal')).show();
+    if (IS_ADMIN) {
+        document.getElementById('addMiembroModalTitle').textContent = 'Agregar Integrante al Proyecto';
+        document.getElementById('selectUserGroup').style.display = 'block';
+        document.getElementById('fixedUserGroup').style.display = 'none';
+        document.getElementById('addMiembroBtnText').textContent = 'Asignar Integrante';
+        const select = document.getElementById('addMiembroUserId');
+        if (!allUsersCache) {
+            allUsersCache = await apiGet('/api/usuarios');
+        }
+        select.innerHTML = '<option value="">Selecciona un usuario...</option>';
+        allUsersCache.forEach(u => {
+            select.innerHTML += `<option value="${u.id}">${escapeHtml(u.nombre)} (${escapeHtml(u.titulo || 'Profesional')})</option>`;
+        });
+    } else {
+        document.getElementById('addMiembroModalTitle').textContent = 'Unirme al Proyecto';
+        document.getElementById('selectUserGroup').style.display = 'none';
+        document.getElementById('fixedUserGroup').style.display = 'block';
+        document.getElementById('fixedUserName').value = CURRENT_USER_NAME + ' (Tú)';
+        document.getElementById('addMiembroUserId').value = CURRENT_USER_ID;
+        document.getElementById('addMiembroBtnText').textContent = 'Unirme al Proyecto';
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addMiembroModal')).show();
 }
 
 async function confirmAddMiembro() {
     const projectId = document.getElementById('addMiembroProyId').value;
-    const userId = document.getElementById('addMiembroUserId').value;
+    const userId = IS_ADMIN ? document.getElementById('addMiembroUserId').value : CURRENT_USER_ID;
     const rol = document.getElementById('addMiembroRol').value.trim();
 
     if (!userId) {
@@ -285,8 +348,8 @@ async function confirmAddMiembro() {
             project_id: projectId,
             rol: rol || 'Colaborador'
         });
-        showToast('Integrante vinculado al proyecto', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('addMiembroModal')).hide();
+        showToast(IS_ADMIN ? 'Integrante vinculado al proyecto' : '¡Te has unido exitosamente al proyecto!', 'success');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addMiembroModal')).hide();
         loadMiembros(projectId);
     } catch (e) {
         console.error(e);
@@ -294,13 +357,15 @@ async function confirmAddMiembro() {
 }
 
 async function removeMiembro(userId, projectId) {
-    if (!confirmAction('¿Quitar a este usuario del proyecto?')) return;
+    const isMe = userId === CURRENT_USER_ID;
+    const msg = isMe ? '¿Deseas salir de este proyecto?' : '¿Quitar a este usuario del proyecto?';
+    if (!confirmAction(msg)) return;
     try {
         await apiDelete('/api/relaciones/participa_en', {
             user_id: userId,
             project_id: projectId
         });
-        showToast('Usuario removido del proyecto', 'success');
+        showToast(isMe ? 'Has salido del proyecto' : 'Usuario removido del proyecto', 'success');
         loadMiembros(projectId);
     } catch (e) {
         console.error(e);

@@ -30,31 +30,48 @@
 
 ## 🔐 2. Sistema de Autenticación y Roles de Usuario
 
-La aplicación cuenta con un sistema de sesiones basado en dos roles claramente diferenciados:
+La aplicación cuenta con un sistema de sesiones basado en tres roles claramente diferenciados:
 
 ### A. Rol Administrador (Admin)
 - **Acceso:** Total e ilimitado a todas las herramientas ya existentes.
 - **Capacidades exclusivas:**
-  - Crear, editar y eliminar usuarios, empresas, habilidades, proyectos y ofertas laborales.
-  - Ver todos los postulantes de cualquier oferta.
-  - Asignar o remover integrantes en cualquier proyecto.
+  - Crear, editar y eliminar usuarios, empresas, habilidades globales, proyectos y ofertas laborales.
+  - Ver todos los postulantes de cualquier oferta y postular candidatos.
+  - Asignar o remover a cualquier integrante en cualquier proyecto.
+  - Modificar las contraseñas de los usuarios y gestionar accesos.
   - Visualizar el panel de analítica global.
 - **Credenciales por defecto:**
   - **Correo:** `admin@pronet.com`
   - **Contraseña:** `admin123`
   - *(O mediante el botón de 1 clic "Entrar como Administrador" en la pantalla de login)*.
 
-### B. Rol Usuario Profesional (Usuario Estándar)
-- **Acceso:** Personalizado enfocado en su propia trayectoria y red.
-- **Capacidades:**
+### B. Rol Empresa (Empleador / Cuenta Corporativa)
+- **Acceso:** Centro de reclutamiento y gestión de talento corporativo.
+- **Capacidades exclusivas de Empresa:**
+  - **Publicar Ofertas Laborales:** Botón **"Nueva Oferta"** en `/ofertas` vinculado automáticamente a su empresa.
+  - **Gestionar Requisitos:** Puede añadir y remover competencias técnicas requeridas (`REQUIERE`) a **sus propias vacantes**.
+  - **Ver Candidatos Postulados:** Botón **"Postulantes"** en sus vacantes para revisar qué profesionales aplicaron a sus ofertas y ver sus perfiles.
+  - **Editar y Eliminar sus Ofertas:** Control total sobre las vacantes publicadas por su organización.
+  - **Editar Perfil Corporativo:** Puede actualizar la información de su empresa (descripción, industria, sitio web, ubicación) en `/empresas`.
+  - **Búsqueda de Talento:** Puede explorar profesionales en la red (`/usuarios`) para identificar candidatos potenciales.
+- **Registro y Acceso:**
+  - Registro directo desde `/register` seleccionando la pestaña **"Empresa / Empleador"**.
+  - En la pantalla de login `/login`, se incluye un selector rápido de empresas existentes (ej. *TechColombia SAS*, *DataSoft Solutions*, etc.) con sus correos y contraseñas.
+
+### C. Rol Usuario Profesional (Candidato / Profesional)
+- **Acceso:** Personalizado y enfocado en su propia trayectoria, red de contactos y búsqueda de empleo.
+- **Capacidades y Restricciones:**
   - **Mi Perfil (`/mi-perfil`):** Administra sus propias habilidades técnicas, su experiencia laboral en empresas, sus proyectos y sus postulaciones a vacantes.
-  - **Explorar Red:** Puede explorar otros profesionales, ver sus perfiles y conectarse con ellos mediante el botón **"Conectar en mi Red"** (`CONECTA_CON`).
-  - **Privacidad y Control:** No puede editar ni borrar la información de otros profesionales.
-  - **Bolsa de Empleo:** Puede postularse directamente a cualquier vacante activa con el botón **"Postularme a esta Oferta"** (`POSTULA_A`).
+  - **Proyectos Colaborativos (`/proyectos`):** 
+    - **Control estricto:** Un usuario no-admin **no puede agregar a otros usuarios a proyectos**. Solo puede unirse a sí mismo mediante el botón **"Unirme a este Proyecto"** asignándose su rol (ej. *Backend Developer*, *DevOps*).
+    - Solo puede retirarse a sí mismo de los proyectos en los que participa; no puede expulsar a otros integrantes.
+  - **Bolsa de Empleo y Requisitos (`/ofertas`):**
+    - Un usuario no-admin **no puede añadir ni eliminar habilidades requeridas a las ofertas laborales** (los requisitos son de solo lectura).
+    - Puede postularse directamente a cualquier vacante activa con el botón **"Postularme a esta Oferta"** (`POSTULA_A`).
+  - **Explorar Red (`/usuarios`):** Puede explorar otros profesionales, ver sus perfiles y conectarse con ellos mediante el botón **"Conectar en mi Red"** (`CONECTA_CON`).
+  - **Privacidad y Control:** No puede editar ni borrar la información, contraseñas ni postulaciones de otros profesionales o empresas.
 - **Credenciales:**
-  - Cada usuario tiene asignada una **contraseña aleatoria de 6 dígitos** (ej. `492018`, `839102`), visible y editable por el Administrador en la tabla de usuarios. En la pantalla de login, el selector rápido de usuarios autocompleta la contraseña correspondiente para facilitar pruebas. También se puede registrar una nueva cuenta desde `/register`.
-- **Gestión de Contraseñas desde el Panel de Administrador:**
-  - En la sección `/usuarios`, el Administrador puede ver la contraseña de cada usuario y modificarla en tiempo real mediante el botón con ícono de llave (<i class="fas fa-key"></i>), generando claves aleatorias de 6 dígitos o asignando una clave manual.
+  - Cada usuario tiene asignada una contraseña de 6 dígitos autocompletable en el login rápido de `/login` o registrable en `/register`.
 
 ---
 
