@@ -108,12 +108,10 @@ class Neo4jDB:
     def ensure_user_passwords(self):
         import random
         with self.driver.session() as session:
-            # Query all users that don't have a password or have empty password
             result = session.run("MATCH (n:Usuario) WHERE n.password IS NULL OR n.password = '' RETURN n.id AS id")
             for r in result:
                 pwd = str(random.randint(100000, 999999))
                 session.run("MATCH (n:Usuario {id: $id}) SET n.password = $pwd", id=r["id"], pwd=pwd)
-            return self._node_to_dict(record) if record else None
 
     def delete_usuario(self, uid):
         with self.driver.session() as session:
@@ -155,7 +153,16 @@ class Neo4jDB:
     def get_all_empresas(self):
         with self.driver.session() as session:
             result = session.run("MATCH (n:Empresa) RETURN n ORDER BY n.nombre")
-            return [self._node_to_dict(r) for r in result]
+            empresas = []
+            for r in result:
+                emp = self._node_to_dict(r)
+                if not emp.get("email"):
+                    clean_name = "".join(c for c in emp.get("nombre", "empresa").lower() if c.isalnum())
+                    emp["email"] = f"contacto@{clean_name or 'empresa'}.com"
+                if not emp.get("password"):
+                    emp["password"] = "123456"
+                empresas.append(emp)
+            return empresas
 
     def get_empresa(self, uid):
         with self.driver.session() as session:
@@ -164,13 +171,30 @@ class Neo4jDB:
             return self._node_to_dict(record) if record else None
 
     def get_empresa_by_email(self, email):
+        clean_email = email.strip().lower()
         with self.driver.session() as session:
+            # 1. Try exact match by email
             result = session.run(
-                "MATCH (n:Empresa) WHERE toLower(n.email) = toLower($email) RETURN n",
-                email=email.strip()
+                "MATCH (n:Empresa) WHERE n.email IS NOT NULL AND toLower(n.email) = $email RETURN n",
+                email=clean_email
             )
             record = result.single()
-            return self._node_to_dict(record) if record else None
+            if record:
+                return self._node_to_dict(record)
+
+            # 2. Try match by clean name or generated email format
+            all_emps = session.run("MATCH (n:Empresa) RETURN n")
+            for r in all_emps:
+                emp = self._node_to_dict(r)
+                name = emp.get("nombre", "")
+                clean_name = "".join(c for c in name.lower() if c.isalnum())
+                generated_email = f"contacto@{clean_name}.com"
+                if clean_email == generated_email or clean_email == clean_name or clean_email == name.lower():
+                    if not emp.get("email"):
+                        session.run("MATCH (n:Empresa {id: $id}) SET n.email = $email", id=emp["id"], email=generated_email)
+                        emp["email"] = generated_email
+                    return emp
+            return None
 
     def ensure_empresa_passwords(self):
         import random
@@ -182,9 +206,9 @@ class Neo4jDB:
                 name = emp.get("nombre", "empresa")
                 clean_name = "".join(c for c in name.lower() if c.isalnum())
                 updates = {}
-                if not emp.get("password"):
+                if not emp.get("password") or str(emp.get("password")).strip() == "":
                     updates["password"] = str(random.randint(100000, 999999))
-                if not emp.get("email"):
+                if not emp.get("email") or str(emp.get("email")).strip() == "":
                     updates["email"] = f"contacto@{clean_name or 'empresa'}.com"
                 if updates:
                     set_clauses = ", ".join([f"n.{k} = ${k}" for k in updates.keys()])

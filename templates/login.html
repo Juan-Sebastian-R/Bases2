@@ -12,7 +12,7 @@
             </div>
             <div class="card-body px-4 py-3">
                 <!-- Login Form -->
-                <form method="POST" action="/login">
+                <form method="POST" action="/login" id="mainLoginForm">
                     <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
                     
                     <div class="mb-3">
@@ -100,7 +100,7 @@
 {% block scripts %}
 <script>
 function autoFillUser(select) {
-    if (select.value) {
+    if (select && select.value) {
         const selectedOpt = select.options[select.selectedIndex];
         document.getElementById('loginEmail').value = select.value;
         document.getElementById('loginPassword').value = selectedOpt.dataset.password || '123456';
@@ -109,22 +109,22 @@ function autoFillUser(select) {
 
 function loginQuickUser() {
     const select = document.getElementById('quickUserSelect');
-    if (!select.value) {
+    if (!select || !select.value) {
         showToast('Selecciona un usuario de la lista', 'warning');
         return;
     }
     autoFillUser(select);
-    document.querySelector('form').submit();
+    document.getElementById('mainLoginForm').submit();
 }
 
 function loginQuickEmpresa() {
     const select = document.getElementById('quickEmpresaSelect');
-    if (!select.value) {
+    if (!select || !select.value) {
         showToast('Selecciona una empresa de la lista', 'warning');
         return;
     }
     autoFillUser(select);
-    document.querySelector('form').submit();
+    document.getElementById('mainLoginForm').submit();
 }
 </script>
 {% endblock %}

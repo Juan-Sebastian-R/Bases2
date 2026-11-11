@@ -123,12 +123,15 @@ def login_page():
         # 2. Empresa check in Neo4j
         empresa = db.get_empresa_by_email(email)
         if empresa:
-            emp_pwd = str(empresa.get("password") or "").strip()
+            emp_pwd = str(empresa.get("password") or "123456").strip()
             if not emp_pwd or password != emp_pwd:
                 flash("Contraseña incorrecta para la cuenta de Empresa.", "danger")
                 usuarios = db.get_all_usuarios()
                 empresas = db.get_all_empresas()
                 return render_template("login.html", usuarios=usuarios, empresas=empresas)
+
+            if not empresa.get("password"):
+                db.update_empresa(empresa["id"], {"password": emp_pwd})
 
             session["user_id"] = empresa["id"]
             session["role"] = "empresa"
