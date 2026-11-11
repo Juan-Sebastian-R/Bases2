@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}ProNet Graph - Panel de Analítica{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line text-info me-2"></i>Panel de Analítica de Grafos</h2>
+    <button class="btn btn-outline-info" onclick="loadAllAnalytics()">
+        <i class="fas fa-sync-alt me-1"></i>Actualizar Métricas
+    </button>
+</div>
+
+<!-- Row 1: Influyentes & Habilidades más demandadas (Charts + Stats) -->
+<div class="row g-4 mb-4">
+    <!-- Usuarios más influyentes -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow border-success">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center border-success">
+                <h5 class="mb-0 text-success">
+                    <i class="fas fa-crown me-2"></i>Usuarios Más Influyentes (Centralidad de Grado)
+                </h5>
+                <span class="badge bg-success">Top Conectividad</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Calculado por la suma ponderada de conexiones profesionales (<span class="badge bg-success">CONECTA_CON</span>), vínculos empresariales (<span class="badge bg-primary">TRABAJA_EN</span>) y proyectos (<span class="badge bg-purple" style="background:#9C27B0;">PARTICIPA_EN</span>).
+                </p>
+                <div style="height: 250px;" class="mb-3">
+                    <canvas id="influyentesChart"></canvas>
+                </div>
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-dark table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Usuario</th>
+                                <th>Título</th>
+                                <th class="text-end">Conexiones Totales</th>
+                            </tr>
+                        </thead>
+                        <tbody id="influyentesTableBody">
+                            <tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-success"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habilidades más demandadas -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow border-warning">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center border-warning">
+                <h5 class="mb-0 text-warning">
+                    <i class="fas fa-fire me-2"></i>Habilidades Más Demandadas en Ofertas
+                </h5>
+                <span class="badge bg-warning text-dark">Mercado Laboral</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Frecuencia de competencias requeridas a través de la relación (<span class="badge bg-danger">REQUIERE</span>) en las vacantes activas.
+                </p>
+                <div style="height: 250px;" class="mb-3">
+                    <canvas id="habilidadesChart"></canvas>
+                </div>
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-dark table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Habilidad</th>
+                                <th>Categoría</th>
+                                <th class="text-end">Ofertas que la Requieren</th>
+                            </tr>
+                        </thead>
+                        <tbody id="habilidadesTableBody">
+                            <tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-warning"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Comunidades Detectadas -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card shadow border-info">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center border-info">
+                <h5 class="mb-0 text-info">
+                    <i class="fas fa-project-diagram me-2"></i>Detección de Comunidades (Componentes Conexos)
+                </h5>
+                <span class="badge bg-info text-dark" id="comunidadesCount">Calculando...</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Identificación de clusters o subredes de profesionales altamente interconectados mediante caminos de contacto directo e indirecto.
+                </p>
+                <div class="row g-3" id="comunidadesContainer">
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border text-info"></div>
+                        <p class="text-muted mt-2">Analizando clusters de la red...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let influyentesChart = null;
+let habilidadesChart = null;
+
+const communityColors = [
+    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#E91E63',
+    '#00BCD4', '#8BC34A', '#FFC107', '#3F51B5', '#009688'
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllAnalytics();
+});
+
+function loadAllAnalytics() {
+    loadInfluyentes();
+    loadHabilidadesDemandadas();
+    loadComunidades();
+}
+
+async function loadInfluyentes() {
+    try {
+        const data = await apiGet('/api/analitica/influyentes');
+        const tbody = document.getElementById('influyentesTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No hay datos disponibles.</td></tr>';
+            return;
+        }
+
+        const labels = [];
+        const values = [];
+
+        data.forEach((u, i) => {
+            labels.push(u.nombre || 'Desconocido');
+            values.push(u.total_conexiones || 0);
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge bg-secondary">${i + 1}</span></td>
+                    <td><a href="/usuarios/${u.id}" class="text-info text-decoration-none fw-bold">${escapeHtml(u.nombre)}</a></td>
+                    <td><small class="text-muted">${escapeHtml(u.titulo || 'N/A')}</small></td>
+                    <td class="text-end fw-bold text-success">${u.total_conexiones}</td>
+                </tr>
+            `;
+        });
+
+        // Update Chart.js
+        if (influyentesChart) influyentesChart.destroy();
+        const ctx = document.getElementById('influyentesChart').getContext('2d');
+        influyentesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.slice(0, 7),
+                datasets: [{
+                    label: 'Conexiones Totales',
+                    data: values.slice(0, 7),
+                    backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                    borderColor: '#4CAF50',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#e0e0e0', font: { size: 10 } } },
+                    y: { ticks: { color: '#e0e0e0', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.08)' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function loadHabilidadesDemandadas() {
+    try {
+        const data = await apiGet('/api/analitica/habilidades_demandadas');
+        const tbody = document.getElementById('habilidadesTableBody');
+        tbody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">No hay datos disponibles.</td></tr>';
+            return;
+        }
+
+        const labels = [];
+        const values = [];
+
+        data.forEach((h, i) => {
+            labels.push(h.nombre || 'Habilidad');
+            values.push(h.demanda || 0);
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge bg-secondary">${i + 1}</span></td>
+                    <td class="fw-bold text-warning">${escapeHtml(h.nombre)}</td>
+                    <td><span class="badge bg-dark border border-secondary">${escapeHtml(h.categoria || 'General')}</span></td>
+                    <td class="text-end fw-bold text-warning">${h.demanda}</td>
+                </tr>
+            `;
+        });
+
+        if (habilidadesChart) habilidadesChart.destroy();
+        const ctx = document.getElementById('habilidadesChart').getContext('2d');
+        habilidadesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.slice(0, 7),
+                datasets: [{
+                    label: 'Vacantes que la requieren',
+                    data: values.slice(0, 7),
+                    backgroundColor: 'rgba(255, 152, 0, 0.7)',
+                    borderColor: '#FF9800',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#e0e0e0', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.08)' } },
+                    y: { ticks: { color: '#e0e0e0', font: { size: 10 } } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function loadComunidades() {
+    const container = document.getElementById('comunidadesContainer');
+    const badge = document.getElementById('comunidadesCount');
+    try {
+        const data = await apiGet('/api/analitica/comunidades');
+        if (!data || data.length === 0) {
+            badge.textContent = '0 comunidades';
+            container.innerHTML = '<div class="col-12 text-center text-muted py-3">No se detectaron comunidades interconectadas.</div>';
+            return;
+        }
+
+        badge.textContent = `${data.length} Comunidades`;
+        container.innerHTML = '';
+
+        data.forEach((comm, index) => {
+            const color = communityColors[index % communityColors.length];
+            const miembros = comm.miembros || [];
+            
+            let membersList = '';
+            miembros.forEach(m => {
+                membersList += `
+                    <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="d-flex align-items-center bg-dark p-2 rounded border border-secondary">
+                            <i class="fas fa-user-circle me-2" style="color: ${color}; font-size: 1.2rem;"></i>
+                            <div class="overflow-hidden">
+                                <a href="/usuarios/${m.id}" class="text-white text-decoration-none fw-bold small text-truncate d-block">${escapeHtml(m.nombre)}</a>
+                                <small class="text-muted text-truncate d-block">${escapeHtml(m.titulo || 'Profesional')}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML += `
+                <div class="col-12 mb-3">
+                    <div class="card bg-black border" style="border-color: ${color} !important;">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,0.05); border-bottom: 1px solid ${color};">
+                            <span class="fw-bold" style="color: ${color};">
+                                <i class="fas fa-network-wired me-2"></i>Comunidad #${index + 1}
+                            </span>
+                            <span class="badge" style="background-color: ${color}; color: #000;">
+                                ${miembros.length} Miembros
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                ${membersList || '<p class="text-muted small">Sin miembros detallados</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div class="col-12 text-danger text-center">Error al procesar comunidades.</div>';
+    }
+}
+</script>
+{% endblock %}
+

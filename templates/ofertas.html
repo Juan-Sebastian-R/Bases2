@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% block title %}ProNet Graph - Ofertas Laborales{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-briefcase text-danger me-2"></i>Ofertas Laborales</h2>
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#ofertaModal" onclick="resetOfertaForm()">
+        <i class="fas fa-plus me-1"></i>Nueva Oferta
+    </button>
+</div>
+
+<!-- Ofertas Grid -->
+<div class="row g-4" id="ofertasGrid">
+    {% for o in ofertas %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #F44336 !important;"
+             data-id="{{ o.id }}" data-titulo="{{ o.titulo }}" data-modalidad="{{ o.modalidad }}"
+             data-salario="{{ o.salario }}" data-descripcion="{{ o.descripcion }}" data-fecha="{{ o.fecha_publicacion }}">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white"><i class="fas fa-briefcase text-danger me-2"></i>{{ o.titulo }}</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editOferta(this)" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOferta('{{ o.id }}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge {% if o.modalidad == 'remoto' %}bg-success{% elif o.modalidad == 'hibrido' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                        {{ o.modalidad or 'presencial' }}
+                    </span>
+                    <span class="text-success fw-bold"><i class="fas fa-money-bill-wave me-1"></i>{{ o.salario or 'A convenir' }}</span>
+                </div>
+                <p class="text-light mb-3">{{ o.descripcion or 'Sin descripción' }}</p>
+                {% if o.fecha_publicacion %}
+                <small class="text-muted"><i class="fas fa-clock me-1"></i>Publicada: {{ o.fecha_publicacion }}</small>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-dark">
+                <div class="btn-group w-100 mb-2">
+                    <button class="btn btn-sm btn-outline-warning" onclick="toggleHabilidades('{{ o.id }}', this)">
+                        <i class="fas fa-cogs me-1"></i>Habilidades
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="togglePostulantes('{{ o.id }}', this)">
+                        <i class="fas fa-user-check me-1"></i>Postulantes
+                    </button>
+                </div>
+                <!-- Container Habilidades -->
+                <div class="habilidades-container d-none mb-2 p-2 border border-secondary rounded" id="habs-{{ o.id }}">
+                    <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-warning"></div></div>
+                </div>
+                <!-- Container Postulantes -->
+                <div class="postulantes-container d-none p-2 border border-secondary rounded" id="posts-{{ o.id }}">
+                    <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-info"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not ofertas %}
+<div class="text-center py-5">
+    <p class="text-muted">No hay ofertas laborales registradas.</p>
+</div>
+{% endif %}
+
+<!-- Oferta Modal (Create / Edit) -->
+<div class="modal fade" id="ofertaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ofertaModalTitle">Nueva Oferta Laboral</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ofertaForm">
+                    <input type="hidden" id="ofertaId">
+                    <div class="mb-3">
+                        <label class="form-label">Título de la Vacante</label>
+                        <input type="text" class="form-control" id="ofeTitulo" required>
+                    </div>
+                    <div class="mb-3" id="empresaSelectGroup">
+                        <label class="form-label">Empresa que Publica</label>
+                        <select class="form-select" id="ofeEmpresaId">
+                            <option value="">Seleccionar empresa...</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Modalidad</label>
+                            <select class="form-select" id="ofeModalidad">
+                                <option value="remoto">Remoto</option>
+                                <option value="hibrido">Híbrido</option>
+                                <option value="presencial">Presencial</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Salario / Rango</label>
+                            <input type="text" class="form-control" id="ofeSalario" placeholder="ej. $6,000,000 COP">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="ofeDescripcion" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="saveOferta()">
+                    <i class="fas fa-save me-1"></i>Guardar Oferta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Habilidad Requerida -->
+<div class="modal fade" id="addSkillOfertaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Habilidad Requerida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="skillOfertaId">
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Habilidad</label>
+                    <select class="form-select" id="skillOfertaSelect">
+                        <option value="">Cargando habilidades...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning text-dark fw-bold" onclick="confirmAddSkillOferta()">
+                    <i class="fas fa-plus me-1"></i>Agregar Habilidad
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Postular Usuario -->
+<div class="modal fade" id="postularUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Postular Candidato a la Vacante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="postularOfertaId">
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Candidato</label>
+                    <select class="form-select" id="postularUserSelect">
+                        <option value="">Cargando usuarios...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="confirmPostularUser()">
+                    <i class="fas fa-paper-plane me-1"></i>Postular
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allSkillsCache = null;
+let allUsersCache = null;
+let allCompaniesCache = null;
+
+async function resetOfertaForm() {
+    document.getElementById('ofertaId').value = '';
+    document.getElementById('ofeTitulo').value = '';
+    document.getElementById('ofeModalidad').value = 'remoto';
+    document.getElementById('ofeSalario').value = '';
+    document.getElementById('ofeDescripcion').value = '';
+    document.getElementById('ofertaModalTitle').textContent = 'Nueva Oferta Laboral';
+    document.getElementById('empresaSelectGroup').style.display = 'block';
+
+    const empSelect = document.getElementById('ofeEmpresaId');
+    if (!allCompaniesCache) {
+        allCompaniesCache = await apiGet('/api/empresas');
+    }
+    empSelect.innerHTML = '<option value="">Seleccionar empresa...</option>';
+    allCompaniesCache.forEach(c => {
+        empSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`;
+    });
+}
+
+function editOferta(btn) {
+    const card = btn.closest('.card');
+    document.getElementById('ofertaId').value = card.dataset.id;
+    document.getElementById('ofeTitulo').value = card.dataset.titulo || '';
+    document.getElementById('ofeModalidad').value = card.dataset.modalidad || 'remoto';
+    document.getElementById('ofeSalario').value = card.dataset.salario || '';
+    document.getElementById('ofeDescripcion').value = card.dataset.descripcion || '';
+    document.getElementById('ofertaModalTitle').textContent = 'Editar Oferta Laboral';
+    document.getElementById('empresaSelectGroup').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('ofertaModal')).show();
+}
+
+async function saveOferta() {
+    const id = document.getElementById('ofertaId').value;
+    const data = {
+        titulo: document.getElementById('ofeTitulo').value.trim(),
+        modalidad: document.getElementById('ofeModalidad').value,
+        salario: document.getElementById('ofeSalario').value.trim(),
+        descripcion: document.getElementById('ofeDescripcion').value.trim(),
+        fecha_publicacion: new Date().toISOString().split('T')[0]
+    };
+
+    if (!data.titulo) {
+        showToast('El título de la vacante es obligatorio', 'warning');
+        return;
+    }
+
+    try {
+        if (id) {
+            await apiPut(`/api/ofertas/${id}`, data);
+            showToast('Oferta actualizada con éxito', 'success');
+        } else {
+            const empresaId = document.getElementById('ofeEmpresaId').value;
+            const newOffer = await apiPost('/api/ofertas', data);
+            if (empresaId && newOffer && newOffer.id) {
+                await apiPost('/api/relaciones/publica', {
+                    company_id: empresaId,
+                    offer_id: newOffer.id
+                });
+            }
+            showToast('Oferta publicada con éxito', 'success');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('ofertaModal')).hide();
+        setTimeout(() => location.reload(), 600);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function deleteOferta(id) {
+    if (!confirmAction('¿Seguro que deseas eliminar esta oferta y sus relaciones?')) return;
+    try {
+        await apiDelete(`/api/ofertas/${id}`);
+        showToast('Oferta eliminada', 'success');
+        setTimeout(() => location.reload(), 600);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function toggleHabilidades(ofertaId, btn) {
+    const container = document.getElementById(`habs-${ofertaId}`);
+    if (container.classList.contains('d-none')) {
+        container.classList.remove('d-none');
+        await loadHabilidades(ofertaId);
+    } else {
+        container.classList.add('d-none');
+    }
+}
+
+async function loadHabilidades(ofertaId) {
+    const container = document.getElementById(`habs-${ofertaId}`);
+    try {
+        const skills = await apiGet(`/api/ofertas/${ofertaId}/habilidades`);
+        let html = '<h6 class="text-warning small mb-2"><i class="fas fa-cogs me-1"></i>Habilidades Requeridas:</h6>';
+        if (!skills || skills.length === 0) {
+            html += '<p class="text-muted small mb-2">No tiene requisitos registrados.</p>';
+        } else {
+            html += '<div class="d-flex flex-wrap gap-1 mb-2">';
+            skills.forEach(s => {
+                html += `
+                    <span class="badge bg-dark border border-warning text-warning d-inline-flex align-items-center">
+                        ${escapeHtml(s.nombre)}
+                        <button class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeSkillOferta('${ofertaId}', '${s.id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
+                `;
+            });
+            html += '</div>';
+        }
+        html += `<button class="btn btn-xs btn-outline-warning w-100 py-1" onclick="openAddSkillOfertaModal('${ofertaId}')">
+                    <i class="fas fa-plus me-1"></i>Añadir Habilidad Requerida
+                 </button>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p class="text-danger small">Error al cargar habilidades</p>';
+    }
+}
+
+async function openAddSkillOfertaModal(ofertaId) {
+    document.getElementById('skillOfertaId').value = ofertaId;
+    const select = document.getElementById('skillOfertaSelect');
+    if (!allSkillsCache) {
+        allSkillsCache = await apiGet('/api/habilidades');
+    }
+    select.innerHTML = '<option value="">Selecciona una habilidad...</option>';
+    allSkillsCache.forEach(s => {
+        select.innerHTML += `<option value="${s.id}">${escapeHtml(s.nombre)} (${escapeHtml(s.categoria || 'General')})</option>`;
+    });
+    new bootstrap.Modal(document.getElementById('addSkillOfertaModal')).show();
+}
+
+async function confirmAddSkillOferta() {
+    const offerId = document.getElementById('skillOfertaId').value;
+    const skillId = document.getElementById('skillOfertaSelect').value;
+    if (!skillId) {
+        showToast('Selecciona una habilidad', 'warning');
+        return;
+    }
+    try {
+        await apiPost('/api/relaciones/requiere', { offer_id: offerId, skill_id: skillId });
+        showToast('Habilidad requerida agregada', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('addSkillOfertaModal')).hide();
+        loadHabilidades(offerId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function removeSkillOferta(offerId, skillId) {
+    try {
+        await apiDelete('/api/relaciones/requiere', { offer_id: offerId, skill_id: skillId });
+        showToast('Habilidad removida', 'success');
+        loadHabilidades(offerId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function togglePostulantes(ofertaId, btn) {
+    const container = document.getElementById(`posts-${ofertaId}`);
+    if (container.classList.contains('d-none')) {
+        container.classList.remove('d-none');
+        await loadPostulantes(ofertaId);
+    } else {
+        container.classList.add('d-none');
+    }
+}
+
+async function loadPostulantes(ofertaId) {
+    const container = document.getElementById(`posts-${ofertaId}`);
+    try {
+        const users = await apiGet(`/api/ofertas/${ofertaId}/postulantes`);
+        let html = '<h6 class="text-info small mb-2"><i class="fas fa-users me-1"></i>Candidatos Postulados:</h6>';
+        if (!users || users.length === 0) {
+            html += '<p class="text-muted small mb-2">No hay candidatos postulados aún.</p>';
+        } else {
+            html += '<div class="list-group list-group-flush mb-2">';
+            users.forEach(u => {
+                html += `
+                    <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center px-2 py-1">
+                        <div>
+                            <a href="/usuarios/${u.id}" class="text-info text-decoration-none fw-bold small">${escapeHtml(u.nombre)}</a>
+                            <small class="text-muted d-block">${escapeHtml(u.titulo || '')}</small>
+                        </div>
+                        <button class="btn btn-sm btn-link text-danger p-0" onclick="removePostulacion('${u.id}', '${ofertaId}')" title="Quitar postulación">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        html += `<button class="btn btn-xs btn-outline-info w-100 py-1" onclick="openPostularUserModal('${ofertaId}')">
+                    <i class="fas fa-paper-plane me-1"></i>Postular Candidato
+                 </button>`;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p class="text-danger small">Error al cargar candidatos</p>';
+    }
+}
+
+async function openPostularUserModal(ofertaId) {
+    document.getElementById('postularOfertaId').value = ofertaId;
+    const select = document.getElementById('postularUserSelect');
+    if (!allUsersCache) {
+        allUsersCache = await apiGet('/api/usuarios');
+    }
+    select.innerHTML = '<option value="">Selecciona un candidato...</option>';
+    allUsersCache.forEach(u => {
+        select.innerHTML += `<option value="${u.id}">${escapeHtml(u.nombre)} - ${escapeHtml(u.titulo || 'Profesional')}</option>`;
+    });
+    new bootstrap.Modal(document.getElementById('postularUserModal')).show();
+}
+
+async function confirmPostularUser() {
+    const offerId = document.getElementById('postularOfertaId').value;
+    const userId = document.getElementById('postularUserSelect').value;
+    if (!userId) {
+        showToast('Selecciona un usuario para postular', 'warning');
+        return;
+    }
+    try {
+        await apiPost('/api/relaciones/postula', {
+            user_id: userId,
+            offer_id: offerId,
+            fecha: new Date().toISOString().split('T')[0]
+        });
+        showToast('Postulación registrada', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('postularUserModal')).hide();
+        loadPostulantes(offerId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function removePostulacion(userId, offerId) {
+    if (!confirmAction('¿Eliminar la postulación de este candidato?')) return;
+    try {
+        await apiDelete('/api/relaciones/postula', { user_id: userId, offer_id: offerId });
+        showToast('Postulación cancelada', 'success');
+        loadPostulantes(offerId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+</script>
+{% endblock %}
+

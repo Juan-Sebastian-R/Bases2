@@ -1,0 +1,587 @@
+{% extends "base.html" %}
+{% block title %}ProNet Graph - {{ usuario.nombre }}{% endblock %}
+
+{% block content %}
+<!-- User Header -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                    <i class="fas fa-user fa-2x text-white"></i>
+                </div>
+            </div>
+            <div class="col">
+                <h2 class="mb-1">{{ usuario.nombre }}</h2>
+                <p class="text-muted mb-1">
+                    <i class="fas fa-briefcase me-1"></i>{{ usuario.titulo or 'Sin título' }}
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ usuario.ubicacion or 'Sin ubicación' }}
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-envelope me-1"></i>{{ usuario.email }}
+                </p>
+                {% if usuario.resumen %}
+                <p class="mt-2 mb-0">{{ usuario.resumen }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Tabs -->
+    <div class="col-lg-8">
+        <ul class="nav nav-tabs mb-3" id="userTabs">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabConexiones">Conexiones</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabHabilidades">Habilidades</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabExperiencia">Experiencia</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabProyectos">Proyectos</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPostulaciones">Postulaciones</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabRecomendaciones">Recomendaciones</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Conexiones Tab -->
+            <div class="tab-pane fade show active" id="tabConexiones">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-link me-1"></i>Conexiones</span>
+                        <div class="input-group" style="max-width:300px;">
+                            <select class="form-select form-select-sm" id="addConnectionSelect">
+                                <option value="">Seleccionar usuario...</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-success" onclick="addConnection()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="conexionesLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                        <div id="conexionesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Habilidades Tab -->
+            <div class="tab-pane fade" id="tabHabilidades">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-cogs me-1"></i>Habilidades</span>
+                        <div class="input-group" style="max-width:300px;">
+                            <select class="form-select form-select-sm" id="addSkillSelect">
+                                <option value="">Seleccionar habilidad...</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-warning" onclick="addSkill()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="habilidadesLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                        <div id="habilidadesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiencia Laboral Tab -->
+            <div class="tab-pane fade" id="tabExperiencia">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-building me-1"></i>Experiencia Laboral</span>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addExpForm">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    </div>
+                    <div class="collapse px-3 pt-3" id="addExpForm">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <select class="form-select form-select-sm" id="expEmpresa">
+                                    <option value="">Empresa...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control form-control-sm" id="expCargo" placeholder="Cargo">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="date" class="form-control form-control-sm" id="expFecha">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-sm btn-primary w-100" onclick="addExperience()">Agregar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="experienciaLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                        <div id="experienciaList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyectos Tab -->
+            <div class="tab-pane fade" id="tabProyectos">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-folder-open me-1"></i>Proyectos</span>
+                        <div class="input-group" style="max-width:350px;">
+                            <select class="form-select form-select-sm" id="addProjectSelect">
+                                <option value="">Seleccionar proyecto...</option>
+                            </select>
+                            <input type="text" class="form-control form-control-sm" id="projectRol" placeholder="Rol" style="max-width:100px;">
+                            <button class="btn btn-sm btn-outline-info" onclick="addProject()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="proyectosLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                        <div id="proyectosList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Postulaciones Tab -->
+            <div class="tab-pane fade" id="tabPostulaciones">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-paper-plane me-1"></i>Postulaciones</span>
+                        <div class="input-group" style="max-width:300px;">
+                            <select class="form-select form-select-sm" id="addOfferSelect">
+                                <option value="">Seleccionar oferta...</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-danger" onclick="applyToOffer()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="postulacionesLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>
+                        <div id="postulacionesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recomendaciones Tab -->
+            <div class="tab-pane fade" id="tabRecomendaciones">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header"><i class="fas fa-user-friends me-1"></i>Contactos Recomendados</div>
+                            <div class="card-body">
+                                <div id="recContactosLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>
+                                <div id="recContactosList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header"><i class="fas fa-briefcase me-1"></i>Empleos Recomendados</div>
+                            <div class="card-body">
+                                <div id="recEmpleosLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>
+                                <div id="recEmpleosList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-people-arrows me-1"></i>Usuarios Similares</div>
+                            <div class="card-body">
+                                <div id="recSimilaresLoading" class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>
+                                <div id="recSimilaresList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contactos en Común -->
+        <div class="card mt-4">
+            <div class="card-header"><i class="fas fa-intersection me-1"></i>Contactos en Común</div>
+            <div class="card-body">
+                <div class="input-group mb-3" style="max-width:400px;">
+                    <select class="form-select" id="commonContactUser">
+                        <option value="">Seleccionar usuario...</option>
+                    </select>
+                    <button class="btn btn-outline-info" onclick="loadCommonContacts()">Buscar</button>
+                </div>
+                <div id="commonContactsResult"></div>
+            </div>
+        </div>
+
+        <!-- Ruta más corta a empresa -->
+        <div class="card mt-4">
+            <div class="card-header"><i class="fas fa-route me-1"></i>Ruta Más Corta a Empresa</div>
+            <div class="card-body">
+                <div class="input-group mb-3" style="max-width:400px;">
+                    <select class="form-select" id="pathCompany">
+                        <option value="">Seleccionar empresa...</option>
+                    </select>
+                    <button class="btn btn-outline-primary" onclick="loadShortestPath()">Buscar</button>
+                </div>
+                <div id="shortestPathResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Ego Graph -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-share-alt me-1"></i>Grafo de Conexiones</div>
+            <div class="card-body p-0">
+                <div id="egoGraph" style="height:400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const USER_ID = '{{ usuario.id }}';
+
+    // ---------- helpers ----------
+    async function apiFetch(url) {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Error al cargar datos');
+        return r.json();
+    }
+
+    // ---------- load selects ----------
+    async function loadSelects() {
+        try {
+            const [users, skills, companies, projects, offers] = await Promise.all([
+                apiFetch('/api/usuarios'),
+                apiFetch('/api/habilidades'),
+                apiFetch('/api/empresas'),
+                apiFetch('/api/proyectos'),
+                apiFetch('/api/ofertas')
+            ]);
+            populateSelect('addConnectionSelect', users.filter(u => u.id !== USER_ID), 'nombre');
+            populateSelect('commonContactUser', users.filter(u => u.id !== USER_ID), 'nombre');
+            populateSelect('addSkillSelect', skills, 'nombre');
+            populateSelect('expEmpresa', companies, 'nombre');
+            populateSelect('pathCompany', companies, 'nombre');
+            populateSelect('addProjectSelect', projects, 'nombre');
+            populateSelect('addOfferSelect', offers, 'titulo');
+        } catch(e) { console.error(e); }
+    }
+
+    function populateSelect(selectId, items, labelKey) {
+        const sel = document.getElementById(selectId);
+        const first = sel.options[0];
+        sel.innerHTML = '';
+        sel.appendChild(first);
+        items.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = item[labelKey];
+            sel.appendChild(opt);
+        });
+    }
+
+    // ---------- Conexiones ----------
+    async function loadConnections() {
+        try {
+            const data = await apiFetch(`/api/usuarios/${USER_ID}/conexiones`);
+            document.getElementById('conexionesLoading').classList.add('d-none');
+            const list = document.getElementById('conexionesList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin conexiones.</p>'; return; }
+            list.innerHTML = data.map(c => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <a href="/usuarios/${c.id}" class="text-info text-decoration-none fw-semibold">${c.nombre}</a>
+                        <small class="text-muted ms-2">${c.titulo || ''}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeConnection('${c.id}')"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+            buildEgoGraph(data);
+        } catch(e) { console.error(e); }
+    }
+
+    async function addConnection() {
+        const otherId = document.getElementById('addConnectionSelect').value;
+        if (!otherId) return;
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/conexiones`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({otro_id: otherId})
+            });
+            showToast('Conexión agregada', 'success');
+            loadConnections();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    async function removeConnection(otherId) {
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/conexiones/${otherId}`, { method: 'DELETE' });
+            showToast('Conexión eliminada', 'success');
+            loadConnections();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    // ---------- Habilidades ----------
+    async function loadSkills() {
+        try {
+            const data = await apiFetch(`/api/usuarios/${USER_ID}/habilidades`);
+            document.getElementById('habilidadesLoading').classList.add('d-none');
+            const list = document.getElementById('habilidadesList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin habilidades.</p>'; return; }
+            list.innerHTML = data.map(s => `
+                <span class="badge bg-warning text-dark me-2 mb-2 fs-6">
+                    ${s.nombre}
+                    <button class="btn-close btn-close-white ms-1" style="font-size:0.5em;" onclick="removeSkill('${s.id}')"></button>
+                </span>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function addSkill() {
+        const skillId = document.getElementById('addSkillSelect').value;
+        if (!skillId) return;
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/habilidades`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({habilidad_id: skillId})
+            });
+            showToast('Habilidad agregada', 'success');
+            loadSkills();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    async function removeSkill(skillId) {
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/habilidades/${skillId}`, { method: 'DELETE' });
+            showToast('Habilidad eliminada', 'success');
+            loadSkills();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    // ---------- Experiencia ----------
+    async function loadExperience() {
+        try {
+            const data = await apiFetch(`/api/usuarios/${USER_ID}/empresas`);
+            document.getElementById('experienciaLoading').classList.add('d-none');
+            const list = document.getElementById('experienciaList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin experiencia laboral.</p>'; return; }
+            list.innerHTML = data.map(e => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <strong>${e.empresa || e.nombre}</strong>
+                        <span class="text-muted ms-2">${e.cargo || ''}</span>
+                        <small class="text-muted ms-2">${e.fecha_inicio || ''}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeExperience('${e.empresa_id || e.id}')"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function addExperience() {
+        const empresa = document.getElementById('expEmpresa').value;
+        const cargo = document.getElementById('expCargo').value;
+        const fecha = document.getElementById('expFecha').value;
+        if (!empresa) return;
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/empresas`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({empresa_id: empresa, cargo, fecha_inicio: fecha})
+            });
+            showToast('Experiencia agregada', 'success');
+            loadExperience();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    async function removeExperience(empresaId) {
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/empresas/${empresaId}`, { method: 'DELETE' });
+            showToast('Experiencia eliminada', 'success');
+            loadExperience();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    // ---------- Proyectos ----------
+    async function loadProjects() {
+        try {
+            const data = await apiFetch(`/api/usuarios/${USER_ID}/proyectos`);
+            document.getElementById('proyectosLoading').classList.add('d-none');
+            const list = document.getElementById('proyectosList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin proyectos.</p>'; return; }
+            list.innerHTML = data.map(p => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <strong>${p.nombre}</strong>
+                        <span class="badge bg-info ms-2">${p.rol || ''}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeProject('${p.proyecto_id || p.id}')"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function addProject() {
+        const projectId = document.getElementById('addProjectSelect').value;
+        const rol = document.getElementById('projectRol').value;
+        if (!projectId) return;
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/proyectos`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({proyecto_id: projectId, rol})
+            });
+            showToast('Proyecto agregado', 'success');
+            loadProjects();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    async function removeProject(projectId) {
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/proyectos/${projectId}`, { method: 'DELETE' });
+            showToast('Proyecto eliminado', 'success');
+            loadProjects();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    // ---------- Postulaciones ----------
+    async function loadApplications() {
+        try {
+            const data = await apiFetch(`/api/usuarios/${USER_ID}/postulaciones`);
+            document.getElementById('postulacionesLoading').classList.add('d-none');
+            const list = document.getElementById('postulacionesList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin postulaciones.</p>'; return; }
+            list.innerHTML = data.map(p => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <strong>${p.titulo}</strong>
+                        <small class="text-muted ms-2">${p.fecha || ''}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeApplication('${p.oferta_id || p.id}')"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function applyToOffer() {
+        const offerId = document.getElementById('addOfferSelect').value;
+        if (!offerId) return;
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/postulaciones`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({oferta_id: offerId, fecha: new Date().toISOString().slice(0,10)})
+            });
+            showToast('Postulación enviada', 'success');
+            loadApplications();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    async function removeApplication(offerId) {
+        try {
+            await fetch(`/api/usuarios/${USER_ID}/postulaciones/${offerId}`, { method: 'DELETE' });
+            showToast('Postulación eliminada', 'success');
+            loadApplications();
+        } catch(e) { showToast(e.message, 'danger'); }
+    }
+
+    // ---------- Recomendaciones ----------
+    async function loadRecommendations() {
+        // Contactos recomendados
+        try {
+            const data = await apiFetch(`/api/recomendaciones/contactos/${USER_ID}`);
+            document.getElementById('recContactosLoading').classList.add('d-none');
+            const list = document.getElementById('recContactosList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
+            list.innerHTML = data.map(c => `
+                <div class="py-1"><a href="/usuarios/${c.id}" class="text-info text-decoration-none">${c.nombre}</a>
+                <small class="text-muted">(${c.mutuos || c.mutual_count || 0} contactos en común)</small></div>
+            `).join('');
+        } catch(e) { document.getElementById('recContactosLoading').classList.add('d-none'); }
+
+        // Empleos recomendados
+        try {
+            const data = await apiFetch(`/api/recomendaciones/empleos/${USER_ID}`);
+            document.getElementById('recEmpleosLoading').classList.add('d-none');
+            const list = document.getElementById('recEmpleosList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
+            list.innerHTML = data.map(o => `
+                <div class="py-1"><strong>${o.titulo}</strong>
+                <small class="text-muted">(${o.match_count || 0} habilidades en común)</small></div>
+            `).join('');
+        } catch(e) { document.getElementById('recEmpleosLoading').classList.add('d-none'); }
+
+        // Usuarios similares
+        try {
+            const data = await apiFetch(`/api/recomendaciones/similares/${USER_ID}`);
+            document.getElementById('recSimilaresLoading').classList.add('d-none');
+            const list = document.getElementById('recSimilaresList');
+            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin usuarios similares.</p>'; return; }
+            list.innerHTML = data.map(u => `
+                <span class="badge bg-success me-2 mb-2 fs-6">
+                    <a href="/usuarios/${u.id}" class="text-white text-decoration-none">${u.nombre}</a>
+                    <small>(${u.shared_skills || u.common_count || 0})</small>
+                </span>
+            `).join('');
+        } catch(e) { document.getElementById('recSimilaresLoading').classList.add('d-none'); }
+    }
+
+    // ---------- Contactos en Común ----------
+    async function loadCommonContacts() {
+        const otherId = document.getElementById('commonContactUser').value;
+        if (!otherId) return;
+        const div = document.getElementById('commonContactsResult');
+        div.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
+        try {
+            const data = await apiFetch(`/api/recomendaciones/comunes/${USER_ID}/${otherId}`);
+            if (!data.length) { div.innerHTML = '<p class="text-muted">No hay contactos en común.</p>'; return; }
+            div.innerHTML = data.map(c => `
+                <span class="badge bg-info me-2 mb-1 fs-6">${c.nombre}</span>
+            `).join('');
+        } catch(e) { div.innerHTML = '<p class="text-danger">Error al cargar.</p>'; }
+    }
+
+    // ---------- Ruta más corta ----------
+    async function loadShortestPath() {
+        const companyId = document.getElementById('pathCompany').value;
+        if (!companyId) return;
+        const div = document.getElementById('shortestPathResult');
+        div.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
+        try {
+            const data = await apiFetch(`/api/recomendaciones/ruta/${USER_ID}/${companyId}`);
+            if (!data.length) { div.innerHTML = '<p class="text-muted">No se encontró ruta.</p>'; return; }
+            div.innerHTML = '<div class="d-flex flex-wrap align-items-center">' +
+                data.map((n, i) => {
+                    const arrow = i < data.length - 1 ? '<i class="fas fa-arrow-right mx-2 text-muted"></i>' : '';
+                    return `<span class="badge bg-secondary fs-6">${n.nombre || n.label || n}</span>${arrow}`;
+                }).join('') + '</div>';
+        } catch(e) { div.innerHTML = '<p class="text-danger">Error al cargar.</p>'; }
+    }
+
+    // ---------- Ego Graph ----------
+    function buildEgoGraph(connections) {
+        const nodes = new vis.DataSet([
+            { id: USER_ID, label: '{{ usuario.nombre }}', color: '#4CAF50', shape: 'dot', size: 25, font: {color:'#fff'} }
+        ]);
+        const edges = new vis.DataSet();
+        (connections || []).forEach(c => {
+            nodes.add({ id: c.id, label: c.nombre, color: '#66BB6A', shape: 'dot', font: {color:'#ccc'} });
+            edges.add({ from: USER_ID, to: c.id });
+        });
+        const container = document.getElementById('egoGraph');
+        new vis.Network(container, { nodes, edges }, {
+            physics: { barnesHut: { gravitationalConstant: -3000 } },
+            nodes: { borderWidth: 2 },
+            edges: { color: { color: '#555' } }
+        });
+    }
+
+    // ---------- Init ----------
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSelects();
+        loadConnections();
+        loadSkills();
+        loadExperience();
+        loadProjects();
+        loadApplications();
+        loadRecommendations();
+    });
+</script>
+{% endblock %}

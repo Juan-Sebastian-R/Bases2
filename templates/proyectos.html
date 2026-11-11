@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}ProNet Graph - Proyectos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-folder-open text-purple me-2" style="color: #9C27B0;"></i>Gestión de Proyectos</h2>
+    <button class="btn btn-primary" style="background-color: #9C27B0; border-color: #9C27B0;" data-bs-toggle="modal" data-bs-target="#proyectoModal" onclick="resetProyectoForm()">
+        <i class="fas fa-plus me-1"></i>Nuevo Proyecto
+    </button>
+</div>
+
+<!-- Projects Grid -->
+<div class="row g-4" id="proyectosGrid">
+    {% for p in proyectos %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0" style="border-top: 4px solid #9C27B0 !important;"
+             data-id="{{ p.id }}" data-nombre="{{ p.nombre }}" data-descripcion="{{ p.descripcion }}"
+             data-estado="{{ p.estado }}" data-fecha_inicio="{{ p.fecha_inicio }}">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-white"><i class="fas fa-layer-group me-2" style="color: #9C27B0;"></i>{{ p.nombre }}</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editProyecto(this)" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteProyecto('{{ p.id }}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="badge {% if p.estado == 'activo' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ p.estado or 'activo' }}
+                    </span>
+                    {% if p.fecha_inicio %}
+                    <small class="text-muted ms-2"><i class="fas fa-calendar-alt me-1"></i>{{ p.fecha_inicio }}</small>
+                    {% endif %}
+                </div>
+                <p class="text-light mb-3">{{ p.descripcion or 'Sin descripción' }}</p>
+            </div>
+            <div class="card-footer bg-dark">
+                <button class="btn btn-sm btn-outline-light w-100 mb-2" onclick="toggleMiembros('{{ p.id }}', this)">
+                    <i class="fas fa-users me-1"></i>Ver Integrantes
+                </button>
+                <div class="miembros-container d-none" id="miembros-{{ p.id }}">
+                    <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-info"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not proyectos %}
+<div class="text-center py-5">
+    <p class="text-muted">No hay proyectos registrados en el sistema.</p>
+</div>
+{% endif %}
+
+<!-- Proyecto Modal (Create / Edit) -->
+<div class="modal fade" id="proyectoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="proyectoModalTitle">Nuevo Proyecto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="proyectoForm">
+                    <input type="hidden" id="proyectoId">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Proyecto</label>
+                        <input type="text" class="form-control" id="proyNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="proyEstado">
+                            <option value="activo">Activo</option>
+                            <option value="finalizado">Finalizado</option>
+                            <option value="planificacion">En Planificación</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha de Inicio</label>
+                        <input type="date" class="form-control" id="proyFechaInicio">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="proyDescripcion" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" style="background-color: #9C27B0; border-color: #9C27B0;" onclick="saveProyecto()">
+                    <i class="fas fa-save me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Vincular Miembro -->
+<div class="modal fade" id="addMiembroModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Integrante al Proyecto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="addMiembroProyId">
+                <div class="mb-3">
+                    <label class="form-label">Seleccionar Usuario</label>
+                    <select class="form-select" id="addMiembroUserId">
+                        <option value="">Cargando usuarios...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rol en el Proyecto</label>
+                    <input type="text" class="form-control" id="addMiembroRol" placeholder="ej. Tech Lead, Backend Developer, QA">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmAddMiembro()">
+                    <i class="fas fa-user-plus me-1"></i>Asignar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allUsersCache = null;
+
+function resetProyectoForm() {
+    document.getElementById('proyectoId').value = '';
+    document.getElementById('proyNombre').value = '';
+    document.getElementById('proyEstado').value = 'activo';
+    document.getElementById('proyFechaInicio').value = '';
+    document.getElementById('proyDescripcion').value = '';
+    document.getElementById('proyectoModalTitle').textContent = 'Nuevo Proyecto';
+}
+
+function editProyecto(btn) {
+    const card = btn.closest('.card');
+    document.getElementById('proyectoId').value = card.dataset.id;
+    document.getElementById('proyNombre').value = card.dataset.nombre || '';
+    document.getElementById('proyEstado').value = card.dataset.estado || 'activo';
+    document.getElementById('proyFechaInicio').value = card.dataset.fecha_inicio || '';
+    document.getElementById('proyDescripcion').value = card.dataset.descripcion || '';
+    document.getElementById('proyectoModalTitle').textContent = 'Editar Proyecto';
+    new bootstrap.Modal(document.getElementById('proyectoModal')).show();
+}
+
+async function saveProyecto() {
+    const id = document.getElementById('proyectoId').value;
+    const data = {
+        nombre: document.getElementById('proyNombre').value.trim(),
+        estado: document.getElementById('proyEstado').value,
+        fecha_inicio: document.getElementById('proyFechaInicio').value,
+        descripcion: document.getElementById('proyDescripcion').value.trim()
+    };
+
+    if (!data.nombre) {
+        showToast('El nombre del proyecto es obligatorio', 'warning');
+        return;
+    }
+
+    try {
+        if (id) {
+            await apiPut(`/api/proyectos/${id}`, data);
+            showToast('Proyecto actualizado', 'success');
+        } else {
+            await apiPost('/api/proyectos', data);
+            showToast('Proyecto creado', 'success');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('proyectoModal')).hide();
+        setTimeout(() => location.reload(), 600);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function deleteProyecto(id) {
+    if (!confirmAction('¿Seguro que deseas eliminar este proyecto y todas sus relaciones?')) return;
+    try {
+        await apiDelete(`/api/proyectos/${id}`);
+        showToast('Proyecto eliminado', 'success');
+        setTimeout(() => location.reload(), 600);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function toggleMiembros(proyectoId, btn) {
+    const container = document.getElementById(`miembros-${proyectoId}`);
+    if (container.classList.contains('d-none')) {
+        container.classList.remove('d-none');
+        btn.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Ocultar Integrantes';
+        await loadMiembros(proyectoId);
+    } else {
+        container.classList.add('d-none');
+        btn.innerHTML = '<i class="fas fa-users me-1"></i>Ver Integrantes';
+    }
+}
+
+async function loadMiembros(proyectoId) {
+    const container = document.getElementById(`miembros-${proyectoId}`);
+    try {
+        const miembros = await apiGet(`/api/proyectos/${proyectoId}/miembros`);
+        if (!miembros || miembros.length === 0) {
+            container.innerHTML = `
+                <p class="text-muted small mb-2">No hay integrantes registrados.</p>
+                <button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                    <i class="fas fa-plus me-1"></i>Agregar Integrante
+                </button>
+            `;
+            return;
+        }
+
+        let html = '<div class="list-group list-group-flush mb-2">';
+        miembros.forEach(m => {
+            const u = m.usuario || {};
+            html += `
+                <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center px-2 py-1">
+                    <div>
+                        <a href="/usuarios/${u.id}" class="text-info text-decoration-none fw-bold small">${escapeHtml(u.nombre || 'Usuario')}</a>
+                        <span class="badge bg-secondary ms-1 small">${escapeHtml(m.rol || 'Miembro')}</span>
+                    </div>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeMiembro('${u.id}', '${proyectoId}')" title="Quitar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        });
+        html += `</div>
+            <button class="btn btn-sm btn-outline-success w-100" onclick="openAddMiembroModal('${proyectoId}')">
+                <i class="fas fa-plus me-1"></i>Agregar Integrante
+            </button>
+        `;
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<p class="text-danger small">Error al cargar integrantes</p>';
+    }
+}
+
+async function openAddMiembroModal(proyectoId) {
+    document.getElementById('addMiembroProyId').value = proyectoId;
+    document.getElementById('addMiembroRol').value = '';
+    const select = document.getElementById('addMiembroUserId');
+    
+    if (!allUsersCache) {
+        allUsersCache = await apiGet('/api/usuarios');
+    }
+    
+    select.innerHTML = '<option value="">Selecciona un usuario...</option>';
+    allUsersCache.forEach(u => {
+        select.innerHTML += `<option value="${u.id}">${escapeHtml(u.nombre)} (${escapeHtml(u.titulo || 'Profesional')})</option>`;
+    });
+
+    new bootstrap.Modal(document.getElementById('addMiembroModal')).show();
+}
+
+async function confirmAddMiembro() {
+    const projectId = document.getElementById('addMiembroProyId').value;
+    const userId = document.getElementById('addMiembroUserId').value;
+    const rol = document.getElementById('addMiembroRol').value.trim();
+
+    if (!userId) {
+        showToast('Selecciona un usuario', 'warning');
+        return;
+    }
+
+    try {
+        await apiPost('/api/relaciones/participa_en', {
+            user_id: userId,
+            project_id: projectId,
+            rol: rol || 'Colaborador'
+        });
+        showToast('Integrante vinculado al proyecto', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('addMiembroModal')).hide();
+        loadMiembros(projectId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function removeMiembro(userId, projectId) {
+    if (!confirmAction('¿Quitar a este usuario del proyecto?')) return;
+    try {
+        await apiDelete('/api/relaciones/participa_en', {
+            user_id: userId,
+            project_id: projectId
+        });
+        showToast('Usuario removido del proyecto', 'success');
+        loadMiembros(projectId);
+    } catch (e) {
+        console.error(e);
+    }
+}
+</script>
+{% endblock %}
+

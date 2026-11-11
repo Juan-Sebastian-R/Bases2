@@ -1,0 +1,789 @@
+/* ============================================================
+   Professional Network Graph Database — Dark Theme Stylesheet
+   ============================================================ */
+
+/* ---------- Root variables ---------- */
+:root {
+    --bg-darkest: #1a1a2e;
+    --bg-dark: #16213e;
+    --bg-medium: #0f3460;
+    --accent: #e94560;
+    --accent-hover: #d63851;
+    --purple: #533483;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0b0;
+    --text-body: #e0e0e0;
+    --node-usuario: #4CAF50;
+    --node-empresa: #2196F3;
+    --node-habilidad: #FF9800;
+    --node-proyecto: #9C27B0;
+    --node-oferta: #F44336;
+    --border-radius: 12px;
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* ---------- Base ---------- */
+body {
+    background: var(--bg-darkest);
+    color: var(--text-body);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color var(--transition-normal);
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+::selection {
+    background: rgba(233, 69, 96, 0.35);
+    color: var(--text-primary);
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+    background: var(--bg-dark) !important;
+    border-bottom: 3px solid var(--accent);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--accent) !important;
+    font-size: 1.5rem;
+    letter-spacing: 0.5px;
+}
+
+.navbar-brand i {
+    margin-right: 0.4rem;
+}
+
+.nav-link {
+    color: var(--text-secondary) !important;
+    transition: color var(--transition-normal);
+    font-weight: 500;
+    position: relative;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--text-primary) !important;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background: var(--bg-dark);
+    border: 1px solid var(--bg-medium);
+    border-radius: var(--border-radius);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    background: var(--bg-medium);
+    border-bottom: 1px solid var(--purple);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.card-body {
+    color: var(--text-body);
+}
+
+.card-title {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ---------- Stat cards (dashboard) ---------- */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.06;
+    transform: translate(20px, -20px);
+}
+
+.stat-card .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.25rem;
+}
+
+.stat-card.usuarios {
+    border-left: 4px solid var(--node-usuario);
+}
+.stat-card.usuarios .stat-number { color: var(--node-usuario); }
+.stat-card.usuarios::before { background: var(--node-usuario); }
+
+.stat-card.empresas {
+    border-left: 4px solid var(--node-empresa);
+}
+.stat-card.empresas .stat-number { color: var(--node-empresa); }
+.stat-card.empresas::before { background: var(--node-empresa); }
+
+.stat-card.habilidades {
+    border-left: 4px solid var(--node-habilidad);
+}
+.stat-card.habilidades .stat-number { color: var(--node-habilidad); }
+.stat-card.habilidades::before { background: var(--node-habilidad); }
+
+.stat-card.proyectos {
+    border-left: 4px solid var(--node-proyecto);
+}
+.stat-card.proyectos .stat-number { color: var(--node-proyecto); }
+.stat-card.proyectos::before { background: var(--node-proyecto); }
+
+.stat-card.ofertas {
+    border-left: 4px solid var(--node-oferta);
+}
+.stat-card.ofertas .stat-number { color: var(--node-oferta); }
+.stat-card.ofertas::before { background: var(--node-oferta); }
+
+/* ---------- Tables ---------- */
+.table {
+    color: var(--text-body);
+}
+
+.table thead th {
+    background: var(--bg-medium);
+    border-bottom: 2px solid var(--purple);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid var(--bg-medium);
+    transition: background var(--transition-fast);
+}
+
+.table tbody tr:hover {
+    background: rgba(83, 52, 131, 0.2);
+}
+
+.table-dark {
+    --bs-table-bg: var(--bg-dark);
+    --bs-table-border-color: var(--bg-medium);
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.35);
+}
+
+.btn-outline-primary {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-outline-primary:hover {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.35);
+}
+
+.btn-outline-light {
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+}
+
+/* ---------- Modals ---------- */
+.modal-content {
+    background: var(--bg-dark);
+    border: 1px solid var(--bg-medium);
+    border-radius: var(--border-radius);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bg-medium);
+    color: var(--text-primary);
+}
+
+.modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bg-medium);
+}
+
+.modal-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ---------- Form controls ---------- */
+.form-control,
+.form-select {
+    background: var(--bg-darkest);
+    border: 1px solid var(--bg-medium);
+    color: var(--text-body);
+    border-radius: 8px;
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: var(--bg-darkest);
+    border-color: var(--accent);
+    color: var(--text-body);
+    box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.25);
+}
+
+.form-control::placeholder {
+    color: #666;
+}
+
+.form-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* ---------- Badges for node types ---------- */
+.badge-usuario {
+    background: var(--node-usuario) !important;
+    color: #fff;
+}
+
+.badge-empresa {
+    background: var(--node-empresa) !important;
+    color: #fff;
+}
+
+.badge-habilidad {
+    background: var(--node-habilidad) !important;
+    color: var(--bg-darkest);
+}
+
+.badge-proyecto {
+    background: var(--node-proyecto) !important;
+    color: #fff;
+}
+
+.badge-oferta {
+    background: var(--node-oferta) !important;
+    color: #fff;
+}
+
+/* ---------- Graph container ---------- */
+#graph-container {
+    background: #0d1117;
+    border: 1px solid var(--bg-medium);
+    border-radius: var(--border-radius);
+    min-height: 600px;
+    position: relative;
+}
+
+#graph-container .vis-network {
+    outline: none;
+}
+
+/* vis.js navigation button overrides */
+#graph-container .vis-button {
+    background-color: var(--bg-dark) !important;
+    border: 1px solid var(--bg-medium) !important;
+    border-radius: 6px !important;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+#graph-container .vis-button:hover {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(233, 69, 96, 0.3);
+}
+
+/* ---------- Graph controls panel ---------- */
+.graph-controls {
+    background: var(--bg-dark);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--bg-medium);
+}
+
+.graph-controls label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+}
+
+/* ---------- Legend ---------- */
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    display: inline-block;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+/* ---------- Analytics cards ---------- */
+.analytics-card {
+    min-height: 300px;
+}
+
+.analytics-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Tabs ---------- */
+.nav-tabs {
+    border-bottom: 2px solid var(--bg-medium);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    padding: 0.75rem 1.25rem;
+    transition: color var(--transition-normal);
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--text-primary);
+    border: none;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid var(--accent);
+}
+
+/* ---------- User detail sections ---------- */
+.detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.detail-section h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--bg-medium);
+}
+
+.connection-item {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    transition: background var(--transition-fast);
+}
+
+.connection-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.project-item {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+}
+
+/* ---------- Skill badges ---------- */
+.skill-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid var(--node-habilidad);
+    color: var(--node-habilidad);
+    margin: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.skill-badge:hover {
+    background: rgba(255, 152, 0, 0.35);
+    transform: scale(1.05);
+}
+
+/* ---------- Loading spinner ---------- */
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading-spinner .spinner-border {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-width: 3px;
+}
+
+/* ---------- Toast container ---------- */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+}
+
+.toast-container .toast {
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border: none;
+    min-width: 280px;
+}
+
+.toast-container .toast .toast-body {
+    font-weight: 500;
+}
+
+/* ---------- Hero section ---------- */
+.hero {
+    background: linear-gradient(135deg, var(--bg-dark), var(--bg-medium));
+    padding: 3rem 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 70%, rgba(233, 69, 96, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(83, 52, 131, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    position: relative;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0.5rem auto 0;
+    position: relative;
+}
+
+/* ---------- Recommendation cards ---------- */
+.rec-card {
+    background: rgba(233, 69, 96, 0.1);
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.rec-card:hover {
+    background: rgba(233, 69, 96, 0.15);
+    border-color: rgba(233, 69, 96, 0.5);
+}
+
+.rec-card .match-score {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* ---------- Path visualization ---------- */
+.path-node {
+    display: inline-flex;
+    align-items: center;
+}
+
+.path-arrow {
+    margin: 0 0.5rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-darkest);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--purple);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--purple) var(--bg-darkest);
+}
+
+/* ---------- Footer ---------- */
+footer {
+    background: var(--bg-dark);
+    border-top: 1px solid var(--bg-medium);
+    padding: 1rem 0;
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: var(--accent);
+}
+
+/* ---------- Animations ---------- */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ---------- Utility classes ---------- */
+.text-accent {
+    color: var(--accent) !important;
+}
+
+.text-muted-custom {
+    color: var(--text-secondary) !important;
+}
+
+.bg-dark-custom {
+    background: var(--bg-dark) !important;
+}
+
+.bg-medium-custom {
+    background: var(--bg-medium) !important;
+}
+
+.border-accent {
+    border-color: var(--accent) !important;
+}
+
+.rounded-custom {
+    border-radius: var(--border-radius) !important;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+}
+
+/* List group dark override */
+.list-group-item {
+    background: var(--bg-dark);
+    border-color: var(--bg-medium);
+    color: var(--text-body);
+}
+
+.list-group-item:hover {
+    background: rgba(15, 52, 96, 0.6);
+}
+
+/* Pagination dark override */
+.page-link {
+    background: var(--bg-dark);
+    border-color: var(--bg-medium);
+    color: var(--text-secondary);
+}
+
+.page-link:hover {
+    background: var(--bg-medium);
+    color: var(--text-primary);
+    border-color: var(--bg-medium);
+}
+
+.page-item.active .page-link {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* Dropdown dark override */
+.dropdown-menu {
+    background: var(--bg-dark);
+    border: 1px solid var(--bg-medium);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-item {
+    color: var(--text-body);
+}
+
+.dropdown-item:hover {
+    background: var(--bg-medium);
+    color: var(--text-primary);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero {
+        padding: 2rem 1rem;
+    }
+
+    .stat-card .stat-number {
+        font-size: 1.8rem;
+    }
+
+    #graph-container {
+        min-height: 400px;
+    }
+
+    .legend-item {
+        display: flex;
+        margin-bottom: 0.25rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+
+    .nav-link.active::after {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-card .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .card {
+        border-radius: 8px;
+    }
+}
