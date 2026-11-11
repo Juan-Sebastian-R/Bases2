@@ -1,12 +1,141 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from dotenv import load_dotenv
 from database import Neo4jDB
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "pronet-graph-secret-key-2024")
 db = Neo4jDB()
+
+
+# ──────────────────────────── AUTH HELPERS & CONTEXT ────────────────────────────
+
+
+def get_current_user():
+    if "user_id" not in session:
+        return None
+    if session.get("role") == "admin":
+        return {
+            "id": "admin",
+            "nombre": "Administrador",
+            "email": "admin@pronet.com",
+            "role": "admin",
+        }
+    user = db.get_usuario(session["user_id"])
+    if user:
+        user["role"] = "usuario"
+    return user
+
+
+@app.context_processor
+def inject_auth():
+    user = get_current_user()
+    return {
+        "current_user": user,
+        "is_admin": session.get("role") == "admin",
+        "is_logged_in": "user_id" in session,
+    }
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Debes iniciar sesión para acceder a esta sección.", "warning")
+            return redirect(url_for("login_page", next=request.path))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            flash("Acceso restringido: requiere permisos de Administrador.", "danger")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# ──────────────────────────── AUTH ROUTES ────────────────────────────
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "").strip()
+        next_url = request.form.get("next") or "/"
+
+        # Admin check
+        if email == "admin@pronet.com" and (password == "admin123" or password == "admin"):
+            session["user_id"] = "admin"
+            session["role"] = "admin"
+            session["user_name"] = "Administrador"
+            flash("Bienvenido, Administrador. Acceso total concedido.", "success")
+            return redirect(next_url)
+
+        # Normal User check in Neo4j
+        usuario = db.get_usuario_by_email(email)
+        if usuario:
+            session["user_id"] = usuario["id"]
+            session["role"] = "usuario"
+            session["user_name"] = usuario.get("nombre", "Usuario")
+            flash(f"¡Bienvenido de nuevo, {usuario.get('nombre')}!", "success")
+            return redirect(f"/usuarios/{usuario['id']}")
+        else:
+            flash("Usuario no encontrado con ese correo electrónico.", "danger")
+
+    usuarios = db.get_all_usuarios()
+    return render_template("login.html", usuarios=usuarios)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Has cerrado sesión exitosamente.", "info")
+    return redirect(url_for("login_page"))
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register_page():
+    if request.method == "POST":
+        data = {
+            "nombre": request.form.get("nombre", "").strip(),
+            "email": request.form.get("email", "").strip().lower(),
+            "titulo": request.form.get("titulo", "").strip(),
+            "ubicacion": request.form.get("ubicacion", "").strip(),
+            "resumen": request.form.get("resumen", "").strip(),
+        }
+        if not data["nombre"] or not data["email"]:
+            flash("El nombre y correo son obligatorios.", "warning")
+            return render_template("register.html")
+
+        # Verify if email already exists
+        existente = db.get_usuario_by_email(data["email"])
+        if existente:
+            flash("Ese correo ya está registrado en la red. Inicia sesión directamente.", "warning")
+            return redirect(url_for("login_page"))
+
+        nuevo = db.create_usuario(data)
+        session["user_id"] = nuevo["id"]
+        session["role"] = "usuario"
+        session["user_name"] = nuevo["nombre"]
+        flash("¡Cuenta creada exitosamente! Bienvenido a tu perfil.", "success")
+        return redirect(f"/usuarios/{nuevo['id']}")
+
+    return render_template("register.html")
+
+
+@app.route("/mi-perfil")
+@login_required
+def mi_perfil():
+    if session.get("role") == "admin":
+        return redirect("/usuarios")
+    return redirect(f"/usuarios/{session['user_id']}")
 
 
 # ──────────────────────────── PAGE ROUTES ────────────────────────────
@@ -33,6 +162,11 @@ def usuarios_page():
 @app.route("/usuarios/<id>")
 def usuario_detalle_page(id):
     usuario = db.get_usuario(id)
+    if not usuario:
+        flash("Usuario no encontrado.", "danger")
+        return redirect(url_for("usuarios_page"))
+
+    can_edit = session.get("role") == "admin" or session.get("user_id") == id
     conexiones = db.get_user_connections(id)
     habilidades = db.get_user_skills(id)
     empresas = db.get_user_companies(id)
@@ -44,6 +178,7 @@ def usuario_detalle_page(id):
     return render_template(
         "usuario_detalle.html",
         usuario=usuario,
+        can_edit=can_edit,
         conexiones=conexiones,
         habilidades=habilidades,
         empresas=empresas,

@@ -59,6 +59,15 @@ class Neo4jDB:
             record = result.single()
             return self._node_to_dict(record) if record else None
 
+    def get_usuario_by_email(self, email):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (n:Usuario) WHERE toLower(n.email) = toLower($email) RETURN n",
+                email=email.strip()
+            )
+            record = result.single()
+            return self._node_to_dict(record) if record else None
+
     def update_usuario(self, uid, data):
         with self.driver.session() as session:
             result = session.run(

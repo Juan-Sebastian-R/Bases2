@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}ProNet Graph - Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-7 col-lg-5">
+        <div class="card shadow-lg border-0 bg-dark" style="border-top: 4px solid #00BCD4 !important;">
+            <div class="card-header bg-transparent text-center pt-4 pb-2 border-0">
+                <i class="fas fa-user-lock fa-3x text-info mb-2"></i>
+                <h3 class="text-white fw-bold">Iniciar Sesión</h3>
+                <p class="text-muted small">Accede a tu perfil profesional o al panel administrativo</p>
+            </div>
+            <div class="card-body px-4 py-3">
+                <!-- Login Form -->
+                <form method="POST" action="/login">
+                    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-light small fw-bold">Correo Electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-secondary text-light"><i class="fas fa-envelope"></i></span>
+                            <input type="email" name="email" id="loginEmail" class="form-control border-secondary bg-black text-light" placeholder="tu.correo@ejemplo.com" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-light small fw-bold">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary border-secondary text-light"><i class="fas fa-key"></i></span>
+                            <input type="password" name="password" id="loginPassword" class="form-control border-secondary bg-black text-light" placeholder="••••••••" value="123456" required>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Para usuarios de prueba, cualquier clave (o 123456) es válida.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-info w-100 py-2 fw-bold text-dark mt-2 mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Ingresar
+                    </button>
+                </form>
+
+                <hr class="border-secondary my-3">
+
+                <!-- Fast Login for Demo / Evaluation -->
+                <div class="text-center mb-3">
+                    <span class="badge bg-secondary text-light mb-2">Acceso Rápido para Pruebas / Calificación</span>
+                    
+                    <div class="d-grid gap-2">
+                        <!-- Quick Admin Button -->
+                        <form method="POST" action="/login">
+                            <input type="hidden" name="email" value="admin@pronet.com">
+                            <input type="hidden" name="password" value="admin123">
+                            <button type="submit" class="btn btn-outline-warning w-100 btn-sm py-2">
+                                <i class="fas fa-shield-alt me-1"></i>Entrar como <strong>Administrador (Admin)</strong>
+                            </button>
+                        </form>
+
+                        <!-- Quick Demo User Select -->
+                        {% if usuarios %}
+                        <div class="input-group input-group-sm mt-1">
+                            <select class="form-select bg-dark text-light border-secondary" id="quickUserSelect" onchange="autoFillUser(this)">
+                                <option value="">-- O seleccionar Usuario de la Red --</option>
+                                {% for u in usuarios[:8] %}
+                                <option value="{{ u.email }}">{{ u.nombre }} ({{ u.titulo }})</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-info" type="button" onclick="loginQuickUser()">
+                                <i class="fas fa-user-check"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-center mt-3 pt-2 border-top border-secondary">
+                    <small class="text-muted">¿No tienes cuenta? <a href="/register" class="text-info fw-bold text-decoration-none">Regístrate aquí</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function autoFillUser(select) {
+    if (select.value) {
+        document.getElementById('loginEmail').value = select.value;
+        document.getElementById('loginPassword').value = '123456';
+    }
+}
+
+function loginQuickUser() {
+    const email = document.getElementById('quickUserSelect').value;
+    if (!email) {
+        showToast('Selecciona un usuario de la lista', 'warning');
+        return;
+    }
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = '123456';
+    document.querySelector('form').submit();
+}
+</script>
+{% endblock %}

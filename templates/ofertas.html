@@ -4,9 +4,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-briefcase text-danger me-2"></i>Ofertas Laborales</h2>
+    {% if is_admin %}
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#ofertaModal" onclick="resetOfertaForm()">
         <i class="fas fa-plus me-1"></i>Nueva Oferta
     </button>
+    {% endif %}
 </div>
 
 <!-- Ofertas Grid -->
@@ -18,6 +20,7 @@
              data-salario="{{ o.salario }}" data-descripcion="{{ o.descripcion }}" data-fecha="{{ o.fecha_publicacion }}">
             <div class="card-header bg-dark d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 text-white"><i class="fas fa-briefcase text-danger me-2"></i>{{ o.titulo }}</h5>
+                {% if is_admin %}
                 <div>
                     <button class="btn btn-sm btn-outline-warning" onclick="editOferta(this)" title="Editar">
                         <i class="fas fa-edit"></i>
@@ -26,6 +29,7 @@
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
+                {% endif %}
             </div>
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -40,13 +44,20 @@
                 {% endif %}
             </div>
             <div class="card-footer bg-dark">
+                {% if is_logged_in and not is_admin %}
+                <button class="btn btn-sm btn-success w-100 mb-2" onclick="applyDirectly('{{ o.id }}')">
+                    <i class="fas fa-paper-plane me-1"></i>Postularme a esta Oferta
+                </button>
+                {% endif %}
                 <div class="btn-group w-100 mb-2">
                     <button class="btn btn-sm btn-outline-warning" onclick="toggleHabilidades('{{ o.id }}', this)">
-                        <i class="fas fa-cogs me-1"></i>Habilidades
+                        <i class="fas fa-cogs me-1"></i>Requisitos
                     </button>
+                    {% if is_admin %}
                     <button class="btn btn-sm btn-outline-info" onclick="togglePostulantes('{{ o.id }}', this)">
                         <i class="fas fa-user-check me-1"></i>Postulantes
                     </button>
+                    {% endif %}
                 </div>
                 <!-- Container Habilidades -->
                 <div class="habilidades-container d-none mb-2 p-2 border border-secondary rounded" id="habs-{{ o.id }}">
@@ -176,9 +187,28 @@
 
 {% block scripts %}
 <script>
+const CURRENT_USER_ID = '{{ current_user.id if current_user else "" }}';
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 let allSkillsCache = null;
 let allUsersCache = null;
 let allCompaniesCache = null;
+
+async function applyDirectly(offerId) {
+    if (!CURRENT_USER_ID) {
+        window.location.href = '/login?next=' + window.location.pathname;
+        return;
+    }
+    try {
+        await apiPost('/api/relaciones/postula', {
+            user_id: CURRENT_USER_ID,
+            offer_id: offerId,
+            fecha: new Date().toISOString().split('T')[0]
+        });
+        showToast('¡Te has postulado exitosamente a esta vacante!', 'success');
+    } catch(e) {
+        console.error(e);
+    }
+}
 
 async function resetOfertaForm() {
     document.getElementById('ofertaId').value = '';
