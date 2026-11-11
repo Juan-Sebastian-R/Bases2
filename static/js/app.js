@@ -28,6 +28,7 @@ function showToast(message, type = 'success') {
     const colors = {
         success: { bg: '#198754', icon: 'fas fa-check-circle',  label: 'Éxito' },
         error:   { bg: '#dc3545', icon: 'fas fa-times-circle',  label: 'Error' },
+        danger:  { bg: '#dc3545', icon: 'fas fa-times-circle',  label: 'Error' },
         warning: { bg: '#ffc107', icon: 'fas fa-exclamation-triangle', label: 'Advertencia', textColor: '#1a1a2e' },
         info:    { bg: '#0dcaf0', icon: 'fas fa-info-circle',   label: 'Info',  textColor: '#1a1a2e' }
     };

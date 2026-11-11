@@ -32,7 +32,7 @@
                 <p class="mt-2 mb-0 text-light">{{ usuario.resumen }}</p>
                 {% endif %}
             </div>
-            {% if is_logged_in and current_user.id != usuario.id and not is_admin %}
+            {% if is_logged_in and current_user and current_user.id != usuario.id and not is_admin %}
             <div class="col-auto">
                 <button class="btn btn-outline-success" onclick="connectDirectly('{{ usuario.id }}')">
                     <i class="fas fa-user-plus me-1"></i>Conectar en mi Red
@@ -288,7 +288,7 @@
 {% block scripts %}
 <script>
     const USER_ID = '{{ usuario.id }}';
-    const CAN_EDIT = {{ 'true' if can_edit else 'false' }};
+    const CAN_EDIT = '{{ "true" if can_edit else "false" }}' === 'true';
     const CURRENT_USER_ID = '{{ current_user.id if current_user else "" }}';
 
     async function connectDirectly(targetId) {
@@ -512,7 +512,7 @@
             // Cerrar collapse si está abierto
             const collapseEl = document.getElementById('addExpForm');
             if (collapseEl && window.bootstrap) {
-                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
+                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || bootstrap.Collapse.getOrCreateInstance(collapseEl);
                 if (bsCollapse) bsCollapse.hide();
             }
 
@@ -720,8 +720,9 @@
 
     // ---------- Ego Graph ----------
     function buildEgoGraph(connections) {
+        const userName = document.querySelector('h2.text-white')?.textContent?.trim() || 'Usuario';
         const nodes = new vis.DataSet([
-            { id: USER_ID, label: '{{ usuario.nombre }}', color: '#4CAF50', shape: 'dot', size: 25, font: {color:'#fff'} }
+            { id: USER_ID, label: userName, color: '#4CAF50', shape: 'dot', size: 25, font: {color:'#fff'} }
         ]);
         const edges = new vis.DataSet();
         (connections || []).forEach(c => {

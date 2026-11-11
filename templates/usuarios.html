@@ -30,8 +30,8 @@
             </thead>
             <tbody>
                 {% for u in usuarios %}
-                <tr data-id="{{ u.id }}" data-nombre="{{ u.nombre }}" data-email="{{ u.email }}"
-                    data-titulo="{{ u.titulo }}" data-ubicacion="{{ u.ubicacion }}" data-resumen="{{ u.resumen }}"
+                <tr data-id="{{ u.id }}" data-nombre="{{ (u.nombre or '') | escape }}" data-email="{{ (u.email or '') | escape }}"
+                    data-titulo="{{ (u.titulo or '') | escape }}" data-ubicacion="{{ (u.ubicacion or '') | escape }}" data-resumen="{{ (u.resumen or '') | escape }}"
                     data-password="{{ u.password or '' }}">
                     <td>
                         <a href="/usuarios/{{ u.id }}" class="text-decoration-none text-info fw-semibold">
@@ -55,7 +55,7 @@
                         </a>
                         {% if is_admin %}
                         <button class="btn btn-sm btn-outline-warning me-1" title="Modificar Contraseña"
-                            onclick="openPasswordModal('{{ u.id }}', '{{ u.nombre }}', '{{ u.password or '' }}')">
+                            onclick="openPasswordModal(this)">
                             <i class="fas fa-key"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-primary me-1" title="Editar Información"
@@ -198,21 +198,31 @@
         const row = btn.closest('tr');
         document.getElementById('modalTitle').textContent = 'Editar Usuario';
         document.getElementById('userId').value = row.dataset.id;
-        document.getElementById('nombre').value = row.dataset.nombre;
-        document.getElementById('email').value = row.dataset.email;
-        document.getElementById('titulo').value = row.dataset.titulo;
-        document.getElementById('ubicacion').value = row.dataset.ubicacion;
-        document.getElementById('resumen').value = row.dataset.resumen;
+        document.getElementById('nombre').value = row.dataset.nombre || '';
+        document.getElementById('email').value = row.dataset.email || '';
+        document.getElementById('titulo').value = (row.dataset.titulo && row.dataset.titulo !== 'None') ? row.dataset.titulo : '';
+        document.getElementById('ubicacion').value = (row.dataset.ubicacion && row.dataset.ubicacion !== 'None') ? row.dataset.ubicacion : '';
+        document.getElementById('resumen').value = (row.dataset.resumen && row.dataset.resumen !== 'None') ? row.dataset.resumen : '';
         document.getElementById('passwordField').value = row.dataset.password || '';
-        new bootstrap.Modal(document.getElementById('usuarioModal')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('usuarioModal')).show();
     }
 
-    function openPasswordModal(id, nombre, currentPwd) {
+    function openPasswordModal(btnOrId, nombre, currentPwd) {
+        let id, name, pwd;
+        if (typeof btnOrId === 'object' && btnOrId !== null) {
+            const row = btnOrId.closest('tr');
+            id = row.dataset.id;
+            name = row.dataset.nombre || '';
+            pwd = row.dataset.password || '';
+        } else {
+            id = btnOrId;
+            name = nombre || '';
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            pwd = (row && row.dataset.password) || currentPwd || '';
+        }
         document.getElementById('pwdUserId').value = id;
-        document.getElementById('pwdUserName').value = nombre;
-        const row = document.querySelector(`tr[data-id="${id}"]`);
-        const effectivePwd = (row && row.dataset.password) || currentPwd;
-        document.getElementById('pwdNewPassword').value = effectivePwd || generateRandom6Digits();
+        document.getElementById('pwdUserName').value = name;
+        document.getElementById('pwdNewPassword').value = pwd || generateRandom6Digits();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('changePasswordModal')).show();
     }
 
@@ -273,9 +283,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            if (!res.ok) throw new Error('Error al guardar usuario');
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Error al guardar usuario');
+            }
             showToast('Usuario guardado correctamente', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('usuarioModal')).hide();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('usuarioModal')).hide();
             setTimeout(() => location.reload(), 500);
         } catch (e) {
             showToast(e.message, 'danger');
