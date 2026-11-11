@@ -525,7 +525,11 @@ class Neo4jDB:
             )
             return [
                 {
-                    "empresa": dict(r["e"]),
+                    **dict(r["e"]),
+                    "empresa": dict(r["e"]).get("nombre", ""),
+                    "nombre": dict(r["e"]).get("nombre", ""),
+                    "empresa_id": dict(r["e"]).get("id"),
+                    "id": dict(r["e"]).get("id"),
                     "cargo": r["cargo"],
                     "fecha_inicio": r["fecha_inicio"],
                 }
@@ -541,18 +545,40 @@ class Neo4jDB:
                 """,
                 uid=user_id,
             )
-            return [{"proyecto": dict(r["p"]), "rol": r["rol"]} for r in result]
+            return [
+                {
+                    **dict(r["p"]),
+                    "proyecto": dict(r["p"]).get("nombre", ""),
+                    "nombre": dict(r["p"]).get("nombre", ""),
+                    "proyecto_id": dict(r["p"]).get("id"),
+                    "id": dict(r["p"]).get("id"),
+                    "rol": r["rol"],
+                }
+                for r in result
+            ]
 
     def get_user_applications(self, user_id):
         with self.driver.session() as session:
             result = session.run(
                 """
                 MATCH (u:Usuario {id: $uid})-[r:POSTULA_A]->(o:Oferta)
-                RETURN o, r.fecha AS fecha
+                OPTIONAL MATCH (e:Empresa)-[:PUBLICA]->(o)
+                RETURN o, r.fecha AS fecha, e.nombre AS empresa
                 """,
                 uid=user_id,
             )
-            return [{"oferta": dict(r["o"]), "fecha": r["fecha"]} for r in result]
+            return [
+                {
+                    **dict(r["o"]),
+                    "oferta": dict(r["o"]),
+                    "id": dict(r["o"]).get("id"),
+                    "oferta_id": dict(r["o"]).get("id"),
+                    "titulo": dict(r["o"]).get("titulo", "Vacante"),
+                    "fecha": r["fecha"],
+                    "empresa": r["empresa"] or "",
+                }
+                for r in result
+            ]
 
     def get_company_offers(self, company_id):
         with self.driver.session() as session:

@@ -566,29 +566,98 @@ def api_grafo():
 # ──────────────────────────── USER DETAIL APIs ────────────────────────────
 
 
-@app.route("/api/usuarios/<id>/conexiones")
+@app.route("/api/usuarios/<id>/conexiones", methods=["GET", "POST"])
 def api_user_conexiones(id):
+    if request.method == "POST":
+        data = request.get_json() or {}
+        other_id = data.get("otro_id") or data.get("user2_id")
+        if not other_id:
+            return jsonify({"error": "Falta id del usuario a conectar"}), 400
+        db.connect_users(id, other_id)
+        return jsonify({"message": "Conectado"})
     return jsonify(db.get_user_connections(id))
 
 
-@app.route("/api/usuarios/<id>/habilidades")
+@app.route("/api/usuarios/<id>/conexiones/<other_id>", methods=["DELETE"])
+def api_user_del_conexion(id, other_id):
+    db.disconnect_users(id, other_id)
+    return jsonify({"message": "Conexión eliminada"})
+
+
+@app.route("/api/usuarios/<id>/habilidades", methods=["GET", "POST"])
 def api_user_habilidades(id):
+    if request.method == "POST":
+        data = request.get_json() or {}
+        skill_id = data.get("habilidad_id") or data.get("skill_id")
+        if not skill_id:
+            return jsonify({"error": "Falta habilidad_id"}), 400
+        db.add_skill_to_user(id, skill_id)
+        return jsonify({"message": "Habilidad agregada"})
     return jsonify(db.get_user_skills(id))
 
 
-@app.route("/api/usuarios/<id>/empresas")
+@app.route("/api/usuarios/<id>/habilidades/<skill_id>", methods=["DELETE"])
+def api_user_del_habilidad(id, skill_id):
+    db.remove_skill_from_user(id, skill_id)
+    return jsonify({"message": "Habilidad removida"})
+
+
+@app.route("/api/usuarios/<id>/empresas", methods=["GET", "POST"])
 def api_user_empresas(id):
+    if request.method == "POST":
+        data = request.get_json() or {}
+        company_id = data.get("empresa_id") or data.get("company_id")
+        cargo = data.get("cargo", "")
+        fecha = data.get("fecha_inicio", "")
+        if not company_id:
+            return jsonify({"error": "Falta empresa_id"}), 400
+        db.set_works_at(id, company_id, cargo, fecha)
+        return jsonify({"message": "Experiencia agregada"})
     return jsonify(db.get_user_companies(id))
 
 
-@app.route("/api/usuarios/<id>/proyectos")
+@app.route("/api/usuarios/<id>/empresas/<company_id>", methods=["DELETE"])
+def api_user_del_empresa(id, company_id):
+    db.remove_works_at(id, company_id)
+    return jsonify({"message": "Experiencia eliminada"})
+
+
+@app.route("/api/usuarios/<id>/proyectos", methods=["GET", "POST"])
 def api_user_proyectos(id):
+    if request.method == "POST":
+        data = request.get_json() or {}
+        project_id = data.get("proyecto_id") or data.get("project_id")
+        rol = data.get("rol", "")
+        if not project_id:
+            return jsonify({"error": "Falta proyecto_id"}), 400
+        db.add_user_to_project(id, project_id, rol)
+        return jsonify({"message": "Proyecto agregado"})
     return jsonify(db.get_user_projects(id))
 
 
-@app.route("/api/usuarios/<id>/postulaciones")
+@app.route("/api/usuarios/<id>/proyectos/<project_id>", methods=["DELETE"])
+def api_user_del_proyecto(id, project_id):
+    db.remove_user_from_project(id, project_id)
+    return jsonify({"message": "Proyecto eliminado"})
+
+
+@app.route("/api/usuarios/<id>/postulaciones", methods=["GET", "POST"])
 def api_user_postulaciones(id):
+    if request.method == "POST":
+        data = request.get_json() or {}
+        offer_id = data.get("oferta_id") or data.get("offer_id")
+        fecha = data.get("fecha", "")
+        if not offer_id:
+            return jsonify({"error": "Falta oferta_id"}), 400
+        db.apply_to_offer(id, offer_id, fecha)
+        return jsonify({"message": "Postulación agregada"})
     return jsonify(db.get_user_applications(id))
+
+
+@app.route("/api/usuarios/<id>/postulaciones/<offer_id>", methods=["DELETE"])
+def api_user_del_postulacion(id, offer_id):
+    db.remove_application(id, offer_id)
+    return jsonify({"message": "Postulación eliminada"})
 
 
 # ──────────────────────────── COMPANY / OFFER DETAIL APIs ────────────────────────────
