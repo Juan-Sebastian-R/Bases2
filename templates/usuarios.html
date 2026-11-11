@@ -198,7 +198,7 @@
         document.getElementById('pwdUserId').value = id;
         document.getElementById('pwdUserName').value = nombre;
         document.getElementById('pwdNewPassword').value = currentPwd || generateRandom6Digits();
-        new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('changePasswordModal')).show();
     }
 
     async function submitChangePassword() {
@@ -220,7 +220,7 @@
             if (!res.ok) throw new Error(data.error || 'Error al actualizar contraseña');
 
             showToast('¡Contraseña actualizada correctamente!', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('changePasswordModal')).hide();
 
             // Update badge on the table row in real time
             const badge = document.getElementById(`pwd-badge-${id}`);
@@ -230,7 +230,7 @@
             const row = document.querySelector(`tr[data-id="${id}"]`);
             if (row) row.dataset.password = newPassword;
         } catch (e) {
-            showToast(e.message, 'danger');
+            showToast(e.message, 'error');
         }
     }
 

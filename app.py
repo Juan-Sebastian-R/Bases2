@@ -278,6 +278,18 @@ def api_usuario(id):
         return jsonify({"message": "Usuario eliminado"})
 
 
+@app.route("/api/usuarios/<id>/password", methods=["POST", "PUT"])
+def api_usuario_password(id):
+    data = request.get_json() or {}
+    new_password = str(data.get("password", "")).strip()
+    if not new_password or len(new_password) < 4:
+        return jsonify({"error": "La contraseña debe tener al menos 4 dígitos o caracteres"}), 400
+    res = db.update_user_password(id, new_password)
+    if not res:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    return jsonify({"message": "Contraseña actualizada exitosamente", "password": new_password})
+
+
 # ──────────────────────────── CRUD API: EMPRESAS ────────────────────────────
 
 
