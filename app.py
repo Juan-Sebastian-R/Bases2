@@ -267,6 +267,7 @@ def dashboard_page():
 
 
 @app.route("/usuarios")
+@login_required
 def usuarios_page():
     try:
         db.ensure_user_passwords()
@@ -277,6 +278,7 @@ def usuarios_page():
 
 
 @app.route("/usuarios/<id>")
+@login_required
 def usuario_detalle_page(id):
     usuario = db.get_usuario(id)
     if not usuario:
@@ -308,24 +310,28 @@ def usuario_detalle_page(id):
 
 
 @app.route("/empresas")
+@login_required
 def empresas_page():
     empresas = db.get_all_empresas()
     return render_template("empresas.html", empresas=empresas)
 
 
 @app.route("/habilidades")
+@login_required
 def habilidades_page():
     habilidades = db.get_all_habilidades()
     return render_template("habilidades.html", habilidades=habilidades)
 
 
 @app.route("/proyectos")
+@login_required
 def proyectos_page():
     proyectos = db.get_all_proyectos()
     return render_template("proyectos.html", proyectos=proyectos)
 
 
 @app.route("/ofertas")
+@login_required
 def ofertas_page():
     ofertas = db.get_all_ofertas()
     mis_postulaciones = set()
@@ -336,11 +342,13 @@ def ofertas_page():
 
 
 @app.route("/analitica")
+@login_required
 def analitica_page():
     return render_template("analitica.html")
 
 
 @app.route("/grafo")
+@login_required
 def grafo_page():
     return render_template("grafo.html")
 
