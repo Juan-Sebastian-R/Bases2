@@ -51,7 +51,9 @@
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabHabilidades">Habilidades</a></li>
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabExperiencia">Experiencia</a></li>
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabProyectos">Proyectos</a></li>
+            {% if not is_other_user %}
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPostulaciones">Postulaciones</a></li>
+            {% endif %}
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabRecomendaciones">Recomendaciones</a></li>
         </ul>
 
@@ -188,6 +190,7 @@
             </div>
 
             <!-- Postulaciones Tab -->
+            {% if not is_other_user %}
             <div class="tab-pane fade" id="tabPostulaciones">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -209,10 +212,12 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Recomendaciones Tab -->
             <div class="tab-pane fade" id="tabRecomendaciones">
                 <div class="row g-3">
+                    {% if not is_other_user %}
                     <div class="col-md-6">
                         <div class="card h-100">
                             <div class="card-header"><i class="fas fa-user-friends me-1"></i>Contactos Recomendados</div>
@@ -231,6 +236,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header"><i class="fas fa-people-arrows me-1"></i>Usuarios Similares</div>
@@ -246,8 +252,40 @@
 
         <!-- Contactos en Común -->
         <div class="card mt-4">
-            <div class="card-header"><i class="fas fa-intersection me-1"></i>Contactos en Común</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-intersection me-1"></i>
+                    {% if is_other_user %}
+                    Contactos en Común con {{ usuario.nombre }}
+                    {% else %}
+                    Contactos en Común
+                    {% endif %}
+                </span>
+                {% if is_other_user and contactos_en_comun %}
+                <span class="badge bg-info text-dark">{{ contactos_en_comun|length }} en común</span>
+                {% endif %}
+            </div>
             <div class="card-body">
+                {% if is_other_user %}
+                    {% if contactos_en_comun %}
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-check-circle text-success me-1"></i>Tienes <strong>{{ contactos_en_comun|length }}</strong> contacto{{ 's' if contactos_en_comun|length > 1 else '' }} en común con {{ usuario.nombre }}:
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for c in contactos_en_comun %}
+                        <a href="/usuarios/{{ c.id }}" class="btn btn-sm btn-outline-info d-inline-flex align-items-center text-decoration-none shadow-sm">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span>{{ c.nombre }}</span>
+                            {% if c.titulo %}
+                            <span class="badge bg-secondary ms-2" style="font-size:0.75rem;">{{ c.titulo }}</span>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>No tienes contactos en común con {{ usuario.nombre }}.</p>
+                    {% endif %}
+                {% else %}
                 <div class="input-group mb-3" style="max-width:400px;">
                     <select class="form-select" id="commonContactUser">
                         <option value="">Seleccionar usuario...</option>
@@ -255,10 +293,12 @@
                     <button class="btn btn-outline-info" onclick="loadCommonContacts()">Buscar</button>
                 </div>
                 <div id="commonContactsResult"></div>
+                {% endif %}
             </div>
         </div>
 
         <!-- Ruta más corta a empresa -->
+        {% if not is_other_user %}
         <div class="card mt-4">
             <div class="card-header"><i class="fas fa-route me-1"></i>Ruta Más Corta a Empresa</div>
             <div class="card-body">
@@ -271,6 +311,7 @@
                 <div id="shortestPathResult"></div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- Right Column: Ego Graph -->
@@ -334,9 +375,10 @@
 
     function populateSelect(selectId, items, labelKey) {
         const sel = document.getElementById(selectId);
-        const first = sel.options[0];
+        if (!sel) return;
+        const first = sel.options ? sel.options[0] : null;
         sel.innerHTML = '';
-        sel.appendChild(first);
+        if (first) sel.appendChild(first);
         items.forEach(item => {
             const opt = document.createElement('option');
             opt.value = item.id;
@@ -578,10 +620,13 @@
 
     // ---------- Postulaciones ----------
     async function loadApplications() {
+        const loadingEl = document.getElementById('postulacionesLoading');
+        if (!loadingEl) return;
         try {
             const data = await apiFetch(`/api/usuarios/${USER_ID}/postulaciones`);
-            document.getElementById('postulacionesLoading').classList.add('d-none');
+            loadingEl.classList.add('d-none');
             const list = document.getElementById('postulacionesList');
+            if (!list) return;
             if (!data || !data.length) { list.innerHTML = '<p class="text-muted">Sin postulaciones.</p>'; return; }
             list.innerHTML = data.map(p => {
                 const ofe = (p && typeof p.oferta === 'object' && p.oferta !== null) ? p.oferta : p;
@@ -633,42 +678,63 @@
     // ---------- Recomendaciones ----------
     async function loadRecommendations() {
         // Contactos recomendados
-        try {
-            const data = await apiFetch(`/api/recomendaciones/contactos/${USER_ID}`);
-            document.getElementById('recContactosLoading').classList.add('d-none');
-            const list = document.getElementById('recContactosList');
-            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
-            list.innerHTML = data.map(c => `
-                <div class="py-1"><a href="/usuarios/${c.id}" class="text-info text-decoration-none">${c.nombre}</a>
-                <small class="text-muted">(${c.contactos_mutuos ?? c.mutual_count ?? c.mutuos ?? 0} contactos en común)</small></div>
-            `).join('');
-        } catch(e) { document.getElementById('recContactosLoading').classList.add('d-none'); }
+        const recContactosEl = document.getElementById('recContactosLoading');
+        if (recContactosEl) {
+            try {
+                const data = await apiFetch(`/api/recomendaciones/contactos/${USER_ID}`);
+                recContactosEl.classList.add('d-none');
+                const list = document.getElementById('recContactosList');
+                if (list) {
+                    if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; }
+                    else {
+                        list.innerHTML = data.map(c => `
+                            <div class="py-1"><a href="/usuarios/${c.id}" class="text-info text-decoration-none">${c.nombre}</a>
+                            <small class="text-muted">(${c.contactos_mutuos ?? c.mutual_count ?? c.mutuos ?? 0} contactos en común)</small></div>
+                        `).join('');
+                    }
+                }
+            } catch(e) { if (recContactosEl) recContactosEl.classList.add('d-none'); }
+        }
 
         // Empleos recomendados
-        try {
-            const data = await apiFetch(`/api/recomendaciones/empleos/${USER_ID}`);
-            document.getElementById('recEmpleosLoading').classList.add('d-none');
-            const list = document.getElementById('recEmpleosList');
-            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; return; }
-            list.innerHTML = data.map(o => `
-                <div class="py-1"><strong>${o.titulo}</strong>
-                <small class="text-muted">(${o.habilidades_coincidentes ?? o.match_count ?? 0} habilidades en común)</small></div>
-            `).join('');
-        } catch(e) { document.getElementById('recEmpleosLoading').classList.add('d-none'); }
+        const recEmpleosEl = document.getElementById('recEmpleosLoading');
+        if (recEmpleosEl) {
+            try {
+                const data = await apiFetch(`/api/recomendaciones/empleos/${USER_ID}`);
+                recEmpleosEl.classList.add('d-none');
+                const list = document.getElementById('recEmpleosList');
+                if (list) {
+                    if (!data.length) { list.innerHTML = '<p class="text-muted">Sin recomendaciones.</p>'; }
+                    else {
+                        list.innerHTML = data.map(o => `
+                            <div class="py-1"><strong>${o.titulo}</strong>
+                            <small class="text-muted">(${o.habilidades_coincidentes ?? o.match_count ?? 0} habilidades en común)</small></div>
+                        `).join('');
+                    }
+                }
+            } catch(e) { if (recEmpleosEl) recEmpleosEl.classList.add('d-none'); }
+        }
 
         // Usuarios similares
-        try {
-            const data = await apiFetch(`/api/recomendaciones/similares/${USER_ID}`);
-            document.getElementById('recSimilaresLoading').classList.add('d-none');
-            const list = document.getElementById('recSimilaresList');
-            if (!data.length) { list.innerHTML = '<p class="text-muted">Sin usuarios similares.</p>'; return; }
-            list.innerHTML = data.map(u => `
-                <span class="badge bg-success me-2 mb-2 fs-6">
-                    <a href="/usuarios/${u.id}" class="text-white text-decoration-none">${u.nombre}</a>
-                    <small>(${u.habilidades_comunes ?? u.shared_skills ?? u.common_skills ?? u.common_count ?? 0})</small>
-                </span>
-            `).join('');
-        } catch(e) { document.getElementById('recSimilaresLoading').classList.add('d-none'); }
+        const recSimilaresEl = document.getElementById('recSimilaresLoading');
+        if (recSimilaresEl) {
+            try {
+                const data = await apiFetch(`/api/recomendaciones/similares/${USER_ID}`);
+                recSimilaresEl.classList.add('d-none');
+                const list = document.getElementById('recSimilaresList');
+                if (list) {
+                    if (!data.length) { list.innerHTML = '<p class="text-muted">Sin usuarios similares.</p>'; }
+                    else {
+                        list.innerHTML = data.map(u => `
+                            <span class="badge bg-success me-2 mb-2 fs-6">
+                                <a href="/usuarios/${u.id}" class="text-white text-decoration-none">${u.nombre}</a>
+                                <small>(${u.habilidades_comunes ?? u.shared_skills ?? u.common_skills ?? u.common_count ?? 0})</small>
+                            </span>
+                        `).join('');
+                    }
+                }
+            } catch(e) { if (recSimilaresEl) recSimilaresEl.classList.add('d-none'); }
+        }
     }
 
     // ---------- Contactos en Común ----------

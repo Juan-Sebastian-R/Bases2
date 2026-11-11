@@ -285,12 +285,24 @@ def usuario_detalle_page(id):
         flash("Usuario no encontrado.", "danger")
         return redirect(url_for("usuarios_page"))
 
-    can_edit = session.get("role") == "admin" or session.get("user_id") == id
+    current_role = session.get("role")
+    current_user_id = session.get("user_id")
+    is_admin = current_role == "admin"
+    is_other_user = not is_admin and current_user_id and current_user_id != id
+
+    contactos_en_comun = []
+    if is_other_user:
+        try:
+            contactos_en_comun = db.common_contacts(current_user_id, id)
+        except Exception:
+            contactos_en_comun = []
+
+    can_edit = is_admin or current_user_id == id
     conexiones = db.get_user_connections(id)
     habilidades = db.get_user_skills(id)
     empresas = db.get_user_companies(id)
     proyectos = db.get_user_projects(id)
-    postulaciones = db.get_user_applications(id)
+    postulaciones = db.get_user_applications(id) if not is_other_user else []
     recomendaciones_contactos = db.recommend_contacts(id)
     recomendaciones_empleos = db.recommend_jobs(id)
     similares = db.users_with_similar_skills(id)
@@ -298,6 +310,8 @@ def usuario_detalle_page(id):
         "usuario_detalle.html",
         usuario=usuario,
         can_edit=can_edit,
+        is_other_user=is_other_user,
+        contactos_en_comun=contactos_en_comun,
         conexiones=conexiones,
         habilidades=habilidades,
         empresas=empresas,
@@ -831,6 +845,10 @@ def api_user_postulaciones(id):
             return jsonify({"error": "Falta oferta_id"}), 400
         db.apply_to_offer(id, offer_id, fecha)
         return jsonify({"message": "Postulación agregada"})
+
+    if session.get("role") == "usuario" and session.get("user_id") != id:
+        return jsonify([])
+
     return jsonify(db.get_user_applications(id))
 
 
