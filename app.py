@@ -10,6 +10,12 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "pronet-graph-secret-key-2024")
 db = Neo4jDB()
 
+# Ensure all users have 6-digit random passwords
+try:
+    db.ensure_user_passwords()
+except Exception:
+    pass
+
 
 # ──────────────────────────── AUTH HELPERS & CONTEXT ────────────────────────────
 

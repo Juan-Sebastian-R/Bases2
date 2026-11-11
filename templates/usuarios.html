@@ -21,13 +21,17 @@
                     <th>Email</th>
                     <th>Título</th>
                     <th>Ubicación</th>
+                    {% if is_admin %}
+                    <th>Contraseña</th>
+                    {% endif %}
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for u in usuarios %}
                 <tr data-id="{{ u.id }}" data-nombre="{{ u.nombre }}" data-email="{{ u.email }}"
-                    data-titulo="{{ u.titulo }}" data-ubicacion="{{ u.ubicacion }}" data-resumen="{{ u.resumen }}">
+                    data-titulo="{{ u.titulo }}" data-ubicacion="{{ u.ubicacion }}" data-resumen="{{ u.resumen }}"
+                    data-password="{{ u.password or '' }}">
                     <td>
                         <a href="/usuarios/{{ u.id }}" class="text-decoration-none text-info fw-semibold">
                             {{ u.nombre }}
@@ -36,12 +40,22 @@
                     <td>{{ u.email }}</td>
                     <td>{{ u.titulo }}</td>
                     <td>{{ u.ubicacion }}</td>
+                    {% if is_admin %}
+                    <td>
+                        <span class="badge bg-dark border border-warning text-warning font-monospace px-2 py-1" id="pwd-badge-{{ u.id }}">
+                            {{ u.password or '123456' }}
+                        </span>
+                    </td>
+                    {% endif %}
                     <td class="text-end">
                         <a href="/usuarios/{{ u.id }}" class="btn btn-sm btn-outline-info me-1" title="Ver perfil">
                             <i class="fas fa-eye me-1"></i>Ver Perfil
                         </a>
                         {% if is_admin %}
-                        <button class="btn btn-sm btn-outline-warning me-1" title="Editar" onclick="editUser(this)">
+                        <button class="btn btn-sm btn-outline-warning me-1" title="Modificar Contraseña" onclick="openPasswordModal('{{ u.id }}', '{{ u.nombre }}', '{{ u.password or '' }}')">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary me-1" title="Editar Información" onclick="editUser(this)">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deleteUser('{{ u.id }}')">
@@ -87,6 +101,16 @@
                         <input type="text" class="form-control" id="ubicacion">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Contraseña (6 dígitos)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="passwordField" placeholder="ej. 839201">
+                            <button class="btn btn-outline-secondary" type="button" onclick="generateRandomToField('passwordField')">
+                                <i class="fas fa-dice me-1"></i>Generar Aleatoria
+                            </button>
+                        </div>
+                        <small class="text-muted">Si se deja vacío al crear, se generará una aleatoria de 6 dígitos automáticamente.</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Resumen</label>
                         <textarea class="form-control" id="resumen" rows="3"></textarea>
                     </div>
@@ -101,16 +125,60 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Específico para Cambiar Contraseña (Admin) -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark border-warning shadow">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-warning">
+                    <i class="fas fa-key me-2"></i>Modificar Contraseña de Usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pwdUserId">
+                <div class="mb-3">
+                    <label class="form-label text-light small fw-bold">Usuario</label>
+                    <input type="text" class="form-control bg-black text-light border-secondary" id="pwdUserName" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light small fw-bold">Nueva Contraseña (6 dígitos)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control bg-black text-warning font-monospace fs-5 fw-bold border-secondary" id="pwdNewPassword" maxlength="12" placeholder="ej. 492018">
+                        <button class="btn btn-outline-warning" type="button" onclick="generateRandomToField('pwdNewPassword')">
+                            <i class="fas fa-random me-1"></i>6 Dígitos
+                        </button>
+                    </div>
+                    <small class="text-muted">Puedes ingresar una clave personalizada o pulsar el botón para generar 6 dígitos al azar.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning text-dark fw-bold" onclick="submitChangePassword()">
+                    <i class="fas fa-save me-1"></i>Actualizar Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const modal = () => bootstrap.Modal.getInstance(document.getElementById('usuarioModal'));
+    function generateRandom6Digits() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    function generateRandomToField(fieldId) {
+        document.getElementById(fieldId).value = generateRandom6Digits();
+    }
 
     function resetForm() {
         document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
         document.getElementById('usuarioForm').reset();
         document.getElementById('userId').value = '';
+        document.getElementById('passwordField').value = generateRandom6Digits();
     }
 
     function editUser(btn) {
@@ -122,18 +190,65 @@
         document.getElementById('titulo').value = row.dataset.titulo;
         document.getElementById('ubicacion').value = row.dataset.ubicacion;
         document.getElementById('resumen').value = row.dataset.resumen;
+        document.getElementById('passwordField').value = row.dataset.password || '';
         new bootstrap.Modal(document.getElementById('usuarioModal')).show();
+    }
+
+    function openPasswordModal(id, nombre, currentPwd) {
+        document.getElementById('pwdUserId').value = id;
+        document.getElementById('pwdUserName').value = nombre;
+        document.getElementById('pwdNewPassword').value = currentPwd || generateRandom6Digits();
+        new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+    }
+
+    async function submitChangePassword() {
+        const id = document.getElementById('pwdUserId').value;
+        const newPassword = document.getElementById('pwdNewPassword').value.trim();
+
+        if (!newPassword || newPassword.length < 4) {
+            showToast('La contraseña debe tener al menos 4 caracteres o dígitos', 'warning');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/usuarios/${id}/password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPassword })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar contraseña');
+
+            showToast('¡Contraseña actualizada correctamente!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+
+            // Update badge on the table row in real time
+            const badge = document.getElementById(`pwd-badge-${id}`);
+            if (badge) badge.textContent = newPassword;
+
+            // Update row dataset
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) row.dataset.password = newPassword;
+        } catch (e) {
+            showToast(e.message, 'danger');
+        }
     }
 
     async function saveUser() {
         const id = document.getElementById('userId').value;
         const data = {
-            nombre: document.getElementById('nombre').value,
-            email: document.getElementById('email').value,
-            titulo: document.getElementById('titulo').value,
-            ubicacion: document.getElementById('ubicacion').value,
-            resumen: document.getElementById('resumen').value
+            nombre: document.getElementById('nombre').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            titulo: document.getElementById('titulo').value.trim(),
+            ubicacion: document.getElementById('ubicacion').value.trim(),
+            resumen: document.getElementById('resumen').value.trim(),
+            password: document.getElementById('passwordField').value.trim()
         };
+
+        if (!data.nombre || !data.email) {
+            showToast('Nombre y email son requeridos', 'warning');
+            return;
+        }
 
         try {
             const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
@@ -143,8 +258,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            if (!res.ok) throw new Error('Error al guardar');
+            if (!res.ok) throw new Error('Error al guardar usuario');
             showToast('Usuario guardado correctamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('usuarioModal')).hide();
             setTimeout(() => location.reload(), 500);
         } catch (e) {
             showToast(e.message, 'danger');

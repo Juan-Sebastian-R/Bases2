@@ -58,8 +58,10 @@
                         <div class="input-group input-group-sm mt-1">
                             <select class="form-select bg-dark text-light border-secondary" id="quickUserSelect" onchange="autoFillUser(this)">
                                 <option value="">-- O seleccionar Usuario de la Red --</option>
-                                {% for u in usuarios[:8] %}
-                                <option value="{{ u.email }}">{{ u.nombre }} ({{ u.titulo }})</option>
+                                {% for u in usuarios %}
+                                <option value="{{ u.email }}" data-password="{{ u.password or '123456' }}">
+                                    {{ u.nombre }} [Clave: {{ u.password or '123456' }}]
+                                </option>
                                 {% endfor %}
                             </select>
                             <button class="btn btn-outline-info" type="button" onclick="loginQuickUser()">
@@ -83,20 +85,21 @@
 <script>
 function autoFillUser(select) {
     if (select.value) {
+        const selectedOpt = select.options[select.selectedIndex];
         document.getElementById('loginEmail').value = select.value;
-        document.getElementById('loginPassword').value = '123456';
+        document.getElementById('loginPassword').value = selectedOpt.dataset.password || '123456';
     }
 }
 
 function loginQuickUser() {
-    const email = document.getElementById('quickUserSelect').value;
-    if (!email) {
+    const select = document.getElementById('quickUserSelect');
+    if (!select.value) {
         showToast('Selecciona un usuario de la lista', 'warning');
         return;
     }
-    document.getElementById('loginEmail').value = email;
-    document.getElementById('loginPassword').value = '123456';
+    autoFillUser(select);
     document.querySelector('form').submit();
 }
 </script>
 {% endblock %}
+
