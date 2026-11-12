@@ -2,6 +2,9 @@
 
 Aplicación web interactiva basada en **Neo4j** y **Flask** para la gestión, análisis de relaciones y recomendaciones en una red profesional.
 
+> 📖 **¿Eres del equipo y quieres correr la página en tu computador?**  
+> Consulta la guía paso a paso en: [COMO_CORRER_EN_TU_PC.md](COMO_CORRER_EN_TU_PC.md)
+
 ---
 
 ## 🛠️ Tecnologías Utilizadas
